@@ -3,37 +3,60 @@
 /** @var \Framework\Support\LinkGenerator $link */
 ?>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col mt-5">
-            <div class="text-center">
-                <h2>Vaííčko MVC FW</h2>
-                <h3>Version <?= App\Configuration::FW_VERSION ?></h3>
-                <img src="<?= $link->asset('images/vaiicko_logo.png') ?>" alt="Framework Logo">
-                <p>
-                    Congratulations, you have successfully installed and run the framework
-                    <strong>Vaííčko</strong> <?= App\Configuration::FW_VERSION ?>!<br>
-                    We hope that you will create a great application using this framework.<br>
-                </p>
-                <p>
-                    This simple framework was created for teaching purposes and to better understand how the MVC
-                    architecture works.<br>
-                    It is intended for students of the subject <em>web application development</em>, but not only
-                    for them.
-                </p>
-            </div>
+<div class="container mt-4">
+    <h1 class="mb-4">Modules</h1>
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6 col-lg-3">
+            <a href="<?= $link->url(['Treasury', 'index']) ?>" class="text-decoration-none text-reset">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Treasury</h5>
+                        <p class="card-text mb-0">
+                            Manage treasury transactions and balances.
+                        </p>
+                    </div>
+                </div>
+            </a>
         </div>
-    </div>
-    <div class="row mt-3">
-        <div class="col text-center">
-            <h4>Authors</h4>
-            <div>
-                <a href="mailto:Patrik.Hrkut@fri.uniza.sk">doc. Ing. Patrik Hrkút, PhD.</a><br>
-                <a href="mailto:Michal.Duracik@fri.uniza.sk">Ing. Michal Ďuračík, PhD.</a><br>
-                <a href="mailto:Matej.Mesko@fri.uniza.sk">Ing. Matej Meško, PhD.</a><br><br>
-                &copy; 2020-<?= date('Y') ?> University of Žilina, Faculty of Management Science and Informatics,
-                Department of Software Technologies
-            </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <a href="/esncards" class="text-decoration-none text-reset">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">ESNcards</h5>
+                        <p class="card-text mb-0">
+                            Work with ESNcard records.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <a href="/manual" class="text-decoration-none text-reset">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Semester Manual</h5>
+                        <p class="card-text mb-0">
+                            Access the semester manual module.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <a href="/polls" class="text-decoration-none text-reset">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Polls</h5>
+                        <p class="card-text mb-0">
+                            Manage and view polls.
+                        </p>
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
 </div>

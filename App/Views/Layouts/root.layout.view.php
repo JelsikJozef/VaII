@@ -3,6 +3,10 @@
 /** @var string $contentHTML */
 /** @var \Framework\Core\IAuthenticator $auth */
 /** @var \Framework\Support\LinkGenerator $link */
+/** @var float|int|null $currentBalance */
+/** @var string|null $activeModule */
+
+$activeModule = $activeModule ?? 'home';
 
 ?>
 
@@ -21,7 +25,7 @@
 
     <link href="<?= $link->asset('css/esn-custom.css') ?>" rel="stylesheet">
 </head>
-<body>
+<body data-current-balance="<?= htmlspecialchars((string)($currentBalance ?? 0), ENT_QUOTES) ?>">
 <nav class="navbar navbar-expand-lg esn-navbar">
     <div class="container-fluid">
         <a class="navbar-brand esn-brand" href="/">

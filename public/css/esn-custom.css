@@ -44,7 +44,7 @@ body {
 /* 6. aktívna položka v menu */
 .esn-sidebar .nav-link.active {
     background: rgba(0, 174, 239, 0.1);
-    color: var(--esn-turquoise, #00AEEF);
+    color: var(--esn-turquoise);
 }
 
 /* 7. karta modulu na Home */
@@ -63,8 +63,8 @@ body {
 
 /* 9. tlačidlá v Treasury */
 .esn-btn-primary {
-    background: var(--esn-turquoise, #00AEEF);
-    border-color: var(--esn-turquoise, #00AEEF);
+    background: var(--esn-turquoise);
+    border-color: var(--esn-turquoise);
     font-weight: 600;
     border-radius: 999px;
 }
