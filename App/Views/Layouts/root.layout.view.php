@@ -1,58 +1,74 @@
 <?php
 
 /** @var string $contentHTML */
-/** @var \Framework\Auth\AppUser $user */
+/** @var \Framework\Core\IAuthenticator $auth */
 /** @var \Framework\Support\LinkGenerator $link */
+
 ?>
-<!DOCTYPE html>
-<html lang="sk">
+
+<!doctype html>
+<html lang="en">
 <head>
-    <title><?= App\Configuration::APP_NAME ?></title>
-    <!-- Favicons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="<?= $link->asset('favicons/apple-touch-icon.png') ?>">
-    <link rel="icon" type="image/png" sizes="32x32" href="<?= $link->asset('favicons/favicon-32x32.png') ?>">
-    <link rel="icon" type="image/png" sizes="16x16" href="<?= $link->asset('favicons/favicon-16x16.png') ?>">
-    <link rel="manifest" href="<?= $link->asset('favicons/site.webmanifest') ?>">
-    <link rel="shortcut icon" href="<?= $link->asset('favicons/favicon.ico') ?>">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-            crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="<?= $link->asset('css/styl.css') ?>">
-    <script src="<?= $link->asset('js/script.js') ?>"></script>
+    <meta charset="utf-8">
+    <title>ESN UNIZA – Internal Tools</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+          crossorigin="anonymous">
+
+    <link href="<?= $link->asset('css/esn-custom.css') ?>" rel="stylesheet">
 </head>
 <body>
-<nav class="navbar navbar-expand-sm bg-light">
+<nav class="navbar navbar-expand-lg esn-navbar">
     <div class="container-fluid">
-        <a class="navbar-brand" href="<?= $link->url('home.index') ?>">
-            <img src="<?= $link->asset('images/vaiicko_logo.png') ?>" title="<?= App\Configuration::APP_NAME ?>" alt="Framework Logo">
+        <a class="navbar-brand esn-brand" href="/">
+            ESN UNIZA
         </a>
-        <ul class="navbar-nav me-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="<?= $link->url('home.contact') ?>">Contact</a>
-            </li>
-        </ul>
-        <?php if ($user->isLoggedIn()) { ?>
-            <span class="navbar-text">Logged in user: <b><?= $user->getName() ?></b></span>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= $link->url('auth.logout') ?>">Log out</a>
-                </li>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#mainNavbar" aria-controls="mainNavbar"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="/treasury">Treasury</a></li>
+                <li class="nav-item"><a class="nav-link" href="/esncards">ESNcards</a></li>
+                <li class="nav-item"><a class="nav-link" href="/manual">Semester Manual</a></li>
+                <li class="nav-item"><a class="nav-link" href="/polls">Polls</a></li>
             </ul>
-        <?php } else { ?>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= App\Configuration::LOGIN_URL ?>">Log in</a>
-                </li>
-            </ul>
-        <?php } ?>
+        </div>
     </div>
 </nav>
+
 <div class="container-fluid mt-3">
-    <div class="web-content">
-        <?= $contentHTML ?>
+    <div class="row">
+        <!-- sidebar – na mobiloch hore, na veľkých vľavo -->
+        <aside class="col-12 col-lg-3 mb-3 mb-lg-0">
+            <div class="p-3 esn-sidebar rounded-4">
+                <h6 class="text-muted text-uppercase mb-3">Modules</h6>
+                <nav class="nav flex-column">
+                    <a class="nav-link <?= $activeModule === 'home' ? 'active' : '' ?>" href="/">Home</a>
+                    <a class="nav-link <?= $activeModule === 'treasury' ? 'active' : '' ?>" href="/treasury">Treasury</a>
+                    <a class="nav-link <?= $activeModule === 'esncards' ? 'active' : '' ?>" href="/esncards">ESNcards</a>
+                    <a class="nav-link <?= $activeModule === 'manual' ? 'active' : '' ?>" href="/manual">Semester Manual</a>
+                    <a class="nav-link <?= $activeModule === 'polls' ? 'active' : '' ?>" href="/polls">Polls</a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- hlavný obsah -->
+        <main class="col-12 col-lg-9">
+            <?= $content ?? '' ?>
+        </main>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+<script src="/public/js/app.js"></script>
 </body>
 </html>
