@@ -1,5 +1,12 @@
 <?php
 /** @var string $content */
+
+// Určenie aktívnej stránky pre zvýraznenie v navbare a sidebare.
+// Rozlišujeme len medzi úvodnou stránkou ("/") a Treasury ("/treasury"),
+// všetko ostatné berieme ako "home".
+$requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$isTreasury = str_starts_with($requestUri, '/treasury');
+$activePage = $isTreasury ? 'treasury' : 'home';
 ?><!doctype html>
 <html lang="sk">
 <head>
@@ -18,8 +25,8 @@
         </button>
         <div class="collapse navbar-collapse" id="mainNavbar">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="/treasury">Treasury</a></li>
+                <li class="nav-item"><a class="nav-link <?= $activePage === 'home' ? 'active' : '' ?>" href="/">Home</a></li>
+                <li class="nav-item"><a class="nav-link <?= $activePage === 'treasury' ? 'active' : '' ?>" href="/treasury">Treasury</a></li>
             </ul>
         </div>
     </div>
@@ -29,8 +36,8 @@
         <aside class="col-12 col-lg-3 mb-3 mb-lg-0 esn-sidebar">
             <h6 class="text-muted text-uppercase mb-3">Moduly</h6>
             <nav class="nav flex-column">
-                <a class="nav-link" href="/">Dashboard</a>
-                <a class="nav-link" href="/treasury">Treasury</a>
+                <a class="nav-link <?= $activePage === 'home' ? 'active' : '' ?>" href="/">Dashboard</a>
+                <a class="nav-link <?= $activePage === 'treasury' ? 'active' : '' ?>" href="/treasury">Treasury</a>
             </nav>
         </aside>
         <main class="col-12 col-lg-9">
@@ -42,4 +49,3 @@
 <script src="/js/app.js"></script>
 </body>
 </html>
-

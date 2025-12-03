@@ -31,10 +31,10 @@ $activeModule = isset($activeModule) && is_string($activeModule) && $activeModul
     <link rel="stylesheet" href="<?= $link->asset('css/esn-custom.css') ?>">
     <script src="<?= $link->asset('js/script.js') ?>"></script>
 </head>
-<body>
+<body data-active-module="<?= htmlspecialchars($activeModule, ENT_QUOTES) ?>">
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
-        <a class="navbar-brand d-flex align-items-center" href="<?= $link->url(['Home', 'index']) ?>">
+        <a class="navbar-brand d-flex" href="<?= $link->url('Home.index') ?>">
             <img src="<?= $link->asset('images/vektor_logo.png') ?>" alt="ESN" width="120" class="me-2">
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -45,11 +45,11 @@ $activeModule = isset($activeModule) && is_string($activeModule) && $activeModul
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
                     <a class="nav-link <?= $activeModule === 'home' ? 'active' : '' ?>"
-                       href="<?= $link->url(['Home', 'index']) ?>">Home</a>
+                       href="<?= $link->url('Home.index') ?>">Home</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?= $activeModule === 'treasury' ? 'active' : '' ?>"
-                       href="<?= $link->url(['Treasury', 'index']) ?>">ESN Treasury</a>
+                       href="<?= $link->url('Treasury.index') ?>">ESN Treasury</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?= $activeModule === 'esncards' ? 'active' : '' ?>" href="/esncards">ESNcards</a>
@@ -70,20 +70,6 @@ $activeModule = isset($activeModule) && is_string($activeModule) && $activeModul
 
 <div class="container-fluid mt-3">
     <div class="row">
-        <aside class="col-md-3 mb-3">
-            <div class="p-3 esn-sidebar rounded-4">
-                <h6 class="text-muted text-uppercase mb-3">Modules</h6>
-                <nav class="nav flex-column">
-                    <a class="nav-link <?= $activeModule === 'home' ? 'active' : '' ?>"
-                       href="<?= $link->url(['Home', 'index']) ?>">Home</a>
-                    <a class="nav-link <?= $activeModule === 'treasury' ? 'active' : '' ?>"
-                       href="<?= $link->url(['Treasury', 'index']) ?>">Treasury</a>
-                    <a class="nav-link <?= $activeModule === 'esncards' ? 'active' : '' ?>" href="/esncards">ESNcards</a>
-                    <a class="nav-link <?= $activeModule === 'manual' ? 'active' : '' ?>" href="/manual">Semester Manual</a>
-                    <a class="nav-link <?= $activeModule === 'polls' ? 'active' : '' ?>" href="/polls">Polls</a>
-                </nav>
-            </div>
-        </aside>
 
         <main class="col-md-9">
             <?= $contentHTML ?>

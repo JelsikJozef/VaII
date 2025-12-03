@@ -34,10 +34,11 @@ $typeMap = [
             Propose withdrawal or add deposit
         </p>
         <div class="treasury-hero__cta">
-            <a href="<?= $link->url(['Treasury', 'new'], ['type' => 'withdrawal']) ?>" class="btn treasury-btn treasury-btn--withdrawal">
+            <!-- Use string destination "Treasury.new" + parameters; avoid array destination when passing $parameters -->
+            <a href="<?= $link->url('Treasury.new', ['type' => 'withdrawal']) ?>" class="btn treasury-btn treasury-btn--withdrawal">
                 Propose Withdrawal
             </a>
-            <a href="<?= $link->url(['Treasury', 'new'], ['type' => 'deposit']) ?>" class="btn treasury-btn treasury-btn--deposit">
+            <a href="<?= $link->url('Treasury.new', ['type' => 'deposit']) ?>" class="btn treasury-btn treasury-btn--deposit">
                 Add deposit
             </a>
         </div>
