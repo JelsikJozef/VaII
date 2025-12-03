@@ -54,7 +54,7 @@ $getFieldError = static function (array $errors, string $field): string {
                 </div>
 
                 <div class="mb-3">
-                    <label for="amount" class="form-label">Amount</label>
+                    <label for="amount" class="form-label">Amount (€)</label>
                     <input
                         type="number"
                         step="0.01"
