@@ -83,13 +83,11 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
     </div>
 </nav>
 
-<div class="container-fluid mt-3">
-    <div class="row">
-
-        <main class="col-md-9">
-            <?= $contentHTML ?>
-        </main>
-    </div>
+<!-- Centrovaný hlavný obsah -->
+<div class="esn-main-shell">
+    <main class="esn-main-content">
+        <?= $contentHTML ?>
+    </main>
 </div>
 </body>
 </html>
