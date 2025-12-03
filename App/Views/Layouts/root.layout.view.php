@@ -1,9 +1,32 @@
 <?php
 
 /** @var string $contentHTML */
-/** @var \Framework\Auth\AppUser $user */
+/** @var \Framework\Core\IAuthenticator $auth */
 /** @var \Framework\Support\LinkGenerator $link */
+/** @var \Framework\Http\Request|null $request */
+
+// Jednoduché určenie aktívneho modulu pre navbar/sidebar.
+// Priorita:
+// 1) ak controller poslal $activeModule, použijeme ho,
+// 2) inak sa pokúsime odvodiť z query parametra 'c' (napr. c=treasury → 'treasury'),
+// 3) fallback je 'home'.
+if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
+    $activeModule = strtolower($activeModule);
+} else {
+    $fromRequest = null;
+
+    if (isset($request) && $request instanceof \Framework\Http\Request) {
+        $fromRequest = $request->get('c');
+    } elseif (!empty($_GET['c'])) {
+        $fromRequest = $_GET['c'];
+    }
+
+    $activeModule = is_string($fromRequest) && $fromRequest !== ''
+        ? strtolower($fromRequest)
+        : 'home';
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="sk">
 <head>
@@ -20,38 +43,52 @@
             integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="<?= $link->asset('css/styl.css') ?>">
+    <link rel="stylesheet" href="<?= $link->asset('css/esn-custom.css') ?>">
     <script src="<?= $link->asset('js/script.js') ?>"></script>
 </head>
-<body>
-<nav class="navbar navbar-expand-sm bg-light">
+<body data-active-module="<?= htmlspecialchars($activeModule, ENT_QUOTES) ?>">
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
-        <a class="navbar-brand" href="<?= $link->url('home.index') ?>">
-            <img src="<?= $link->asset('images/vaiicko_logo.png') ?>" title="<?= App\Configuration::APP_NAME ?>" alt="Framework Logo">
+        <a class="navbar-brand d-flex" href="<?= $link->url('Home.index') ?>">
+            <img src="<?= $link->asset('images/vektor_logo.png') ?>" alt="ESN" width="120" class="me-2">
         </a>
-        <ul class="navbar-nav me-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="<?= $link->url('home.contact') ?>">Contact</a>
-            </li>
-        </ul>
-        <?php if ($user->isLoggedIn()) { ?>
-            <span class="navbar-text">Logged in user: <b><?= $user->getName() ?></b></span>
-            <ul class="navbar-nav ms-auto">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="<?= $link->url('auth.logout') ?>">Log out</a>
+                    <a class="nav-link <?= $activeModule === 'home' ? 'active' : '' ?>"
+                       href="<?= $link->url('Home.index') ?>">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $activeModule === 'treasury' ? 'active' : '' ?>"
+                       href="<?= $link->url('Treasury.index') ?>">ESN Treasury</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $activeModule === 'esncards' ? 'active' : '' ?>" href="/esncards">ESNcards</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $activeModule === 'manual' ? 'active' : '' ?>" href="/manual">Semester Manual</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $activeModule === 'profile' ? 'active' : '' ?>" href="/profile">Profile</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $activeModule === 'polls' ? 'active' : '' ?>" href="/polls">Polls</a>
                 </li>
             </ul>
-        <?php } else { ?>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= App\Configuration::LOGIN_URL ?>">Log in</a>
-                </li>
-            </ul>
-        <?php } ?>
+        </div>
     </div>
 </nav>
+
 <div class="container-fluid mt-3">
-    <div class="web-content">
-        <?= $contentHTML ?>
+    <div class="row">
+
+        <main class="col-md-9">
+            <?= $contentHTML ?>
+        </main>
     </div>
 </div>
 </body>

@@ -4,6 +4,7 @@ namespace Framework\Http\Responses;
 
 use App\Configuration;
 use Framework\Core\App;
+use Framework\Http\Request;
 use Framework\Support\View as ViewHelper;
 
 /**
@@ -86,7 +87,14 @@ class ViewResponse extends Response
         $contentHTML = ob_get_clean();
 
         if ($selectedLayout !== null) {
-            $layoutData = $viewHelpers + ['contentHTML' => $contentHTML];
+            // Make the current HTTP request available in layouts so they can
+            // derive things like the active navigation item in a robust way.
+            $request = new Request();
+
+            $layoutData = $viewHelpers + [
+                'contentHTML' => $contentHTML,
+                'request' => $request,
+            ];
             $this->renderView($layoutData, $this->getLayoutFullName($selectedLayout));
         } else {
             echo $contentHTML;

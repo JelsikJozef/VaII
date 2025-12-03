@@ -1,17 +1,15 @@
 <?php
 
-// Require the class loader to enable automatic loading of classes
-require __DIR__ . '/../Framework/ClassLoader.php';
+declare(strict_types=1);
 
-use Framework\Core\App;
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 
-try {
-    // Create an instance of the App class
-    $app = new App();
+$rootPath = dirname(__DIR__);
 
-    // Run the application
-    $app->run();
-} catch (Exception $e) {
-    // Handle any exceptions that occur during the application run
-    die('An error occurred: ' . $e->getMessage());
-}
+// Load the framework class loader so all classes (including Framework\Http\Request) are autoloaded correctly
+require_once $rootPath . '/Framework/ClassLoader.php';
+
+$app = new Framework\Core\App();
+$app->run();

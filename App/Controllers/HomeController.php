@@ -39,7 +39,9 @@ class HomeController extends BaseController
      */
     public function index(Request $request): Response
     {
-        return $this->html();
+        return $this->html([
+            'activeModule' => 'home',
+        ]);
     }
 
     /**
@@ -52,6 +54,8 @@ class HomeController extends BaseController
      */
     public function contact(Request $request): Response
     {
-        return $this->html();
+        return $this->html([
+            'activeModule' => 'home',
+        ]);
     }
 }
