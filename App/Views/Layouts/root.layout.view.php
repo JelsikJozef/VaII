@@ -49,15 +49,15 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
 <body data-active-module="<?= htmlspecialchars($activeModule, ENT_QUOTES) ?>">
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
-        <a class="navbar-brand d-flex" href="<?= $link->url('Home.index') ?>">
-            <img src="<?= $link->asset('images/vektor_logo.png') ?>" alt="ESN" width="120" class="me-2">
+        <a class="navbar-brand d-flex align-items-center" href="<?= $link->url('Home.index') ?>">
+            <img src="<?= $link->asset('images/vektor_logo.png') ?>" alt="ESN" class="me-3 esn-logo">
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav mb-2 mb-lg-0">
                 <li class="nav-item">
                     <a class="nav-link <?= $activeModule === 'home' ? 'active' : '' ?>"
                        href="<?= $link->url('Home.index') ?>">Home</a>
@@ -83,13 +83,11 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
     </div>
 </nav>
 
-<div class="container-fluid mt-3">
-    <div class="row">
-
-        <main class="col-md-9">
-            <?= $contentHTML ?>
-        </main>
-    </div>
+<!-- Centrovaný hlavný obsah -->
+<div class="esn-main-shell">
+    <main class="esn-main-content">
+        <?= $contentHTML ?>
+    </main>
 </div>
 </body>
 </html>

@@ -22,22 +22,21 @@ class TreasuryController extends BaseController
 
     public function new(Request $request): Response
     {
-        // načítanie chýb a starých hodnôt zo session (ak existujú)
-        $session = $request->getSession();
-
-        $errors = $session->get('treasury_errors') ?? [];
-        $old = $session->get('treasury_old') ?? [];
-
-        // po jednorazovom zobrazení ich odstránime (flash-like správanie)
-        $session->unset('treasury_errors');
-        $session->unset('treasury_old');
+        // urcenie default hodnoty typu podla zdroja (query parameter ?type=deposit|withdrawal)
+        $typeParam = (string)($request->get('type') ?? '');
+        $defaultType = '';
+        if ($typeParam === 'deposit') {
+            $defaultType = 'deposit';
+        } elseif ($typeParam === 'withdrawal') {
+            $defaultType = 'withdrawal';
+        }
 
         $data = [
             'activeModule' => 'treasury',
-            'errors' => $errors,
-            'type' => $old['type'] ?? '',
-            'amount' => $old['amount'] ?? '',
-            'description' => $old['description'] ?? '',
+            'errors' => [],
+            'type' => $defaultType,
+            'amount' => '',
+            'description' => '',
         ];
 
         return $this->html($data);
@@ -45,9 +44,9 @@ class TreasuryController extends BaseController
 
     public function store(Request $request): Response
     {
-        $type = trim((string)($request->getPost('type') ?? ''));
-        $amountRaw = (string)($request->getPost('amount') ?? '');
-        $description = trim((string)($request->getPost('description') ?? ''));
+        $type = trim((string)($request->post('type') ?? ''));
+        $amountRaw = (string)($request->post('amount') ?? '');
+        $description = trim((string)($request->post('description') ?? ''));
 
         $errors = [];
 
@@ -77,24 +76,20 @@ class TreasuryController extends BaseController
             $errors['description'][] = 'Description must be at most 255 characters.';
         }
 
-        // if there are validation errors, redirect back to the form with errors and old input
+        // Ak sú chyby, zobrazíme formulár znova v rámci jedného requestu (bez redirectu a bez session)
         if (!empty($errors)) {
-            $session = $request->getSession();
-            $session->set('treasury_errors', $errors);
-            $session->set('treasury_old', [
+            return $this->html([
+                'activeModule' => 'treasury',
+                'errors' => $errors,
                 'type' => $type,
                 'amount' => $amountRaw,
                 'description' => $description,
-            ]);
-
-            return $this->redirect(['Treasury', 'new']);
+            ], 'Treasury/new');
         }
 
         // TODO: uloženie transakcie do databázy a prípadná aktualizácia zostatku
 
-        // po úspešnom spracovaní môžeme pridať jednoduchú flash správu (nepovinné)
-        $request->getSession()->set('treasury_success', 'Transaction has been created.');
-
+        // Po úspechu len redirect na index bez flash správy
         return $this->redirect(['Treasury', 'index']);
     }
 }
