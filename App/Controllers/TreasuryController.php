@@ -15,7 +15,9 @@ class TreasuryController extends BaseController
 
     public function index(Request $request): Response
     {
-        return $this->html();
+        return $this->html([
+            'activeModule' => 'treasury',
+        ]);
     }
 
     public function new(Request $request): Response
@@ -31,6 +33,7 @@ class TreasuryController extends BaseController
         $session->unset('treasury_old');
 
         $data = [
+            'activeModule' => 'treasury',
             'errors' => $errors,
             'type' => $old['type'] ?? '',
             'amount' => $old['amount'] ?? '',

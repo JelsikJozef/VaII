@@ -18,6 +18,8 @@ body {
 .esn-navbar {
     background: #ffffff;
     border-bottom: 1px solid #e5e7eb;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
 /* 3. logo / názov */
@@ -25,6 +27,31 @@ body {
     font-weight: 700;
     letter-spacing: 0.04em;
     color: var(--esn-turquoise, #00AEEF);
+}
+
+.esn-logo {
+    height: 32px;
+    width: auto;
+}
+
+/* top-level nav items next to logo (centered row) */
+.esn-main-nav .nav-link {
+    font-weight: 400;
+    font-size: 0.95rem;
+    color: #000000;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+.esn-main-nav .nav-link:hover,
+.esn-main-nav .nav-link:focus {
+    color: #000000;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+}
+
+.esn-main-nav .nav-link.active {
+    font-weight: 600; /* bold for current page */
 }
 
 /* 4. ľavý bočný panel */
@@ -113,4 +140,218 @@ body {
     align-items: center;
     gap: .75rem;
     margin-bottom: 1rem;
+}
+
+/* Treasury page */
+.treasury-page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+.treasury-hero {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    border-radius: 2rem;
+    background: linear-gradient(135deg, rgba(0, 174, 239, 0.1), rgba(236, 0, 140, 0.1));
+    margin-bottom: 2.5rem;
+}
+
+.treasury-hero__eyebrow {
+    letter-spacing: 0.1em;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: var(--esn-turquoise);
+    font-weight: 600;
+}
+
+.treasury-hero__title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin: 1rem 0 0.75rem;
+    font-weight: 700;
+}
+
+.treasury-hero__subtitle {
+    font-size: 1.1rem;
+    color: #4b5563;
+    margin-bottom: 1.5rem;
+}
+
+.treasury-hero__cta {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.treasury-btn {
+    border-radius: 999px;
+    padding: 0.85rem 1.75rem;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+}
+
+.treasury-btn--withdrawal {
+    background: #4b4efc;
+    color: #ffffff;
+}
+
+.treasury-btn--withdrawal:hover {
+    background: #3c3fdb;
+}
+
+.treasury-btn--deposit {
+    background: var(--esn-magenta);
+    color: #ffffff;
+}
+
+.treasury-btn--deposit:hover {
+    background: #c00073;
+}
+
+.treasury-section {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+}
+
+.treasury-section__header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.treasury-filter label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.treasury-filter select {
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    padding: 0.4rem 1rem;
+    font-weight: 500;
+}
+
+.treasury-empty {
+    margin: 0;
+    color: #6b7280;
+}
+
+.treasury-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+}
+
+.treasury-card {
+    background: #fdfdfd;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    border: 1px solid #f0f2f5;
+    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.05);
+}
+
+.treasury-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+}
+
+.treasury-chip {
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.treasury-chip--deposit {
+    background: rgba(122, 193, 67, 0.15);
+    color: #4b8c1f;
+}
+
+.treasury-chip--withdrawal {
+    background: rgba(236, 0, 140, 0.12);
+    color: #c00073;
+}
+
+.treasury-amount {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.treasury-amount--positive {
+    color: #1c9b4d;
+}
+
+.treasury-amount--negative {
+    color: #e11d48;
+}
+
+.treasury-card__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.treasury-card__meta {
+    margin-bottom: 1rem;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.treasury-card__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.treasury-card__date {
+    color: #4b5563;
+}
+
+.treasury-status {
+    padding: 0.25rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.treasury-status--pending {
+    background: rgba(236, 0, 140, 0.12);
+    color: #c00073;
+}
+
+.treasury-status--approved {
+    background: rgba(122, 193, 67, 0.15);
+    color: #4b8c1f;
+}
+
+.treasury-status--rejected {
+    background: rgba(244, 123, 32, 0.15);
+    color: #c05621;
+}
+
+@media (max-width: 768px) {
+    .treasury-page {
+        padding: 1.5rem 1rem 3rem;
+    }
+
+    .treasury-hero {
+        padding: 2.5rem 1rem;
+    }
+
+    .treasury-section {
+        padding: 1.5rem;
+    }
 }
