@@ -28,7 +28,10 @@ class Session
      */
     public function __construct()
     {
-        session_start();
+        // Only start session if it's not already active to prevent warnings
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
         $this->sessionData = &$_SESSION;
     }
 
