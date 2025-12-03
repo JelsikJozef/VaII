@@ -29,9 +29,9 @@ body {
     color: var(--esn-turquoise, #00AEEF);
 }
 
-.esn-logo {
-    height: 32px;
-    width: auto;
+.navbar-brand .esn-logo {
+    width: 120px;
+    height: auto;
 }
 
 /* top-level nav items next to logo (centered row) */

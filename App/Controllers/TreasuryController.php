@@ -5,6 +5,7 @@ namespace App\Controllers;
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use Framework\Http\Session;
 
 class TreasuryController extends BaseController
 {
@@ -23,14 +24,14 @@ class TreasuryController extends BaseController
     public function new(Request $request): Response
     {
         // načítanie chýb a starých hodnôt zo session (ak existujú)
-        $session = $request->getSession();
+        $session = new Session();
 
         $errors = $session->get('treasury_errors') ?? [];
         $old = $session->get('treasury_old') ?? [];
 
         // po jednorazovom zobrazení ich odstránime (flash-like správanie)
-        $session->unset('treasury_errors');
-        $session->unset('treasury_old');
+        $session->remove('treasury_errors');
+        $session->remove('treasury_old');
 
         $data = [
             'activeModule' => 'treasury',
@@ -45,9 +46,9 @@ class TreasuryController extends BaseController
 
     public function store(Request $request): Response
     {
-        $type = trim((string)($request->getPost('type') ?? ''));
-        $amountRaw = (string)($request->getPost('amount') ?? '');
-        $description = trim((string)($request->getPost('description') ?? ''));
+        $type = trim((string)($request->post('type') ?? ''));
+        $amountRaw = (string)($request->post('amount') ?? '');
+        $description = trim((string)($request->post('description') ?? ''));
 
         $errors = [];
 
@@ -79,7 +80,7 @@ class TreasuryController extends BaseController
 
         // if there are validation errors, redirect back to the form with errors and old input
         if (!empty($errors)) {
-            $session = $request->getSession();
+            $session = new Session();
             $session->set('treasury_errors', $errors);
             $session->set('treasury_old', [
                 'type' => $type,
@@ -93,7 +94,8 @@ class TreasuryController extends BaseController
         // TODO: uloženie transakcie do databázy a prípadná aktualizácia zostatku
 
         // po úspešnom spracovaní môžeme pridať jednoduchú flash správu (nepovinné)
-        $request->getSession()->set('treasury_success', 'Transaction has been created.');
+        $session = new Session();
+        $session->set('treasury_success', 'Transaction has been created.');
 
         return $this->redirect(['Treasury', 'index']);
     }
