@@ -3,13 +3,28 @@
 /** @var string $contentHTML */
 /** @var \Framework\Core\IAuthenticator $auth */
 /** @var \Framework\Support\LinkGenerator $link */
+/** @var \Framework\Http\Request|null $request */
 
 // Jednoduché určenie aktívneho modulu pre navbar/sidebar.
-// - ak controller poslal $activeModule, použijeme ho,
-// - inak default 'home'.
-$activeModule = isset($activeModule) && is_string($activeModule) && $activeModule !== ''
-    ? strtolower($activeModule)
-    : 'home';
+// Priorita:
+// 1) ak controller poslal $activeModule, použijeme ho,
+// 2) inak sa pokúsime odvodiť z query parametra 'c' (napr. c=treasury → 'treasury'),
+// 3) fallback je 'home'.
+if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
+    $activeModule = strtolower($activeModule);
+} else {
+    $fromRequest = null;
+
+    if (isset($request) && $request instanceof \Framework\Http\Request) {
+        $fromRequest = $request->get('c');
+    } elseif (!empty($_GET['c'])) {
+        $fromRequest = $_GET['c'];
+    }
+
+    $activeModule = is_string($fromRequest) && $fromRequest !== ''
+        ? strtolower($fromRequest)
+        : 'home';
+}
 ?>
 
 <!DOCTYPE html>

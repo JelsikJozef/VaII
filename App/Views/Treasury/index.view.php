@@ -1,5 +1,8 @@
 <?php
 
+/** @var \Framework\Support\View $view */
+$view->setLayout('root');
+
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var array $transactions */
 
@@ -90,8 +93,7 @@ $typeMap = [
                     <footer class="treasury-card__footer">
                         <span class="treasury-card__date"><?= htmlspecialchars($createdAt, ENT_QUOTES) ?></span>
                         <span class="treasury-status <?= $statusData[1] ?>">
-                            <?= htmlspecialchars($statusData[0], ENT_QUOTES) ?>
-                        </span>
+                            <?= htmlspecialchars($statusData[0], ENT_QUOTES) ?></span>
                     </footer>
                 </article>
                 <?php endforeach; ?>
