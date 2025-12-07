@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Configuration;
 use PDO;
 use PDOException;
 
@@ -12,25 +13,24 @@ class Database
     public static function getConnection(): PDO
     {
         if (self::$pdo === null) {
-            $config = require __DIR__ . '/Configuration.php';
-            $db = $config['db'];
-
             $dsn = sprintf(
                 'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-                $db['host'],
-                $db['port'],
-                $db['dbname'],
-                $db['charset']
+                Configuration::DB_HOST,
+                Configuration::DB_PORT,
+                Configuration::DB_NAME,
+                'utf8mb4'
             );
 
             try {
                 self::$pdo = new PDO(
                     $dsn,
-                    $db['user'],
-                    $db['password'],
+                    Configuration::DB_USER,
+                    Configuration::DB_PASS,
                     [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::ATTR_EMULATE_PREPARES => false,
+                        PDO::ATTR_STRINGIFY_FETCHES => false,
                     ]
                 );
             } catch (PDOException $e) {

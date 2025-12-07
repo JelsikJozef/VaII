@@ -2,7 +2,7 @@
 
 use App\Database;
 
-require __DIR__ . '/../App/Database.php';
+require_once __DIR__ . '/../Framework/ClassLoader.php';
 
 $pdo = Database::getConnection();
 

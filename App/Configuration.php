@@ -11,8 +11,6 @@ use Framework\DB\DefaultConventions;
  *
  * This class holds the main configuration settings for the application, including application name, framework version,
  * database connection settings, authentication, error handling, and other runtime configurations.
- *
- * @package App\Config
  */
 class Configuration
 {
@@ -27,12 +25,13 @@ class Configuration
     public const FW_VERSION = '3.0.6';
 
     /**
-     * Database connection settings.
+     * Database connection settings for ESN DB.
      */
-    public const DB_HOST = 'db';  // Hostname for the database service (defined in docker/docker-compose.yml)
-    public const DB_NAME = 'vaiicko_db'; // Database name (defined in docker/.env)
-    public const DB_USER = 'vaiicko_user'; // Username for database access (defined in docker/.env)
-    public const DB_PASS = 'dtb456'; // Password for database access (defined in docker/.env)
+    public const DB_HOST = '127.0.0.1'; // host from your IDE config (localhost)
+    public const DB_PORT = 3307;       // external port mapped to esn-mariadb
+    public const DB_NAME = 'esn_uniza';
+    public const DB_USER = 'esn_user';
+    public const DB_PASS = 'Test1234!';
 
     /**
      * URL for the login page. Users will be redirected here if authentication is required for an action.
@@ -90,16 +89,4 @@ class Configuration
     public const IDENTITY_SESSION_KEY = 'fw.session.user.identity';
 }
 
-
-return [
-
-    'db' => [
-        'host' => '127.0.0.1',
-        'port' => 3307,
-        'dbname' => 'esn_uniza',
-        'user' => 'esn_user',
-        'password' => 'Test1234!',
-        'charset' => 'utf8mb4',
-    ],
-
-];
+// Remove the array return at the bottom – App\Database will now read DB constants from this class
