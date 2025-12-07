@@ -45,8 +45,11 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
     <link rel="stylesheet" href="<?= $link->asset('css/styl.css') ?>">
     <link rel="stylesheet" href="<?= $link->asset('css/esn-custom.css') ?>">
     <script src="<?= $link->asset('js/script.js') ?>"></script>
+    <script src="<?= $link->asset('js/app.js') ?>" defer></script>
 </head>
-<body data-active-module="<?= htmlspecialchars($activeModule, ENT_QUOTES) ?>">
+<body data-active-module="<?= htmlspecialchars($activeModule, ENT_QUOTES) ?>"
+      data-current-balance="<?= isset($currentBalance) ? htmlspecialchars((string)$currentBalance, ENT_QUOTES) : '' ?>"
+      data-flash-success="<?= isset($successMessage) ? htmlspecialchars((string)$successMessage, ENT_QUOTES) : '' ?>">
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="<?= $link->url('Home.index') ?>">
@@ -86,6 +89,11 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
 <!-- Centrovaný hlavný obsah -->
 <div class="esn-main-shell">
     <main class="esn-main-content">
+        <?php if (!empty($successMessage)): ?>
+            <div class="alert alert-success treasury-flash" role="alert">
+                <?= htmlspecialchars((string)$successMessage, ENT_QUOTES) ?>
+            </div>
+        <?php endif; ?>
         <?= $contentHTML ?>
     </main>
 </div>

@@ -6,13 +6,12 @@ use Framework\Auth\DummyAuthenticator;
 use Framework\Core\ErrorHandler;
 use Framework\DB\DefaultConventions;
 
+
 /**
  * Class Configuration
  *
  * This class holds the main configuration settings for the application, including application name, framework version,
  * database connection settings, authentication, error handling, and other runtime configurations.
- *
- * @package App\Config
  */
 class Configuration
 {
@@ -27,12 +26,14 @@ class Configuration
     public const FW_VERSION = '3.0.6';
 
     /**
-     * Database connection settings.
+     * Database connection settings for ESN DB.
      */
-    public const DB_HOST = 'db';  // Hostname for the database service (defined in docker/docker-compose.yml)
-    public const DB_NAME = 'vaiicko_db'; // Database name (defined in docker/.env)
-    public const DB_USER = 'vaiicko_user'; // Username for database access (defined in docker/.env)
-    public const DB_PASS = 'dtb456'; // Password for database access (defined in docker/.env)
+    public const DB_HOST = '127.0.0.1';
+    public const DB_PORT = 3306;
+    public const DB_NAME = 'app';
+    public const DB_USER = 'app';
+    public const DB_PASS = 'secret';
+    public const DB_CHARSET = 'utf8mb4';
 
     /**
      * URL for the login page. Users will be redirected here if authentication is required for an action.
@@ -88,4 +89,50 @@ class Configuration
 
     // Session key for storing the user identity
     public const IDENTITY_SESSION_KEY = 'fw.session.user.identity';
+
+    public static function getDbHost(): string
+    {
+        return self::envString('APP_DB_HOST', self::DB_HOST);
+    }
+
+    public static function getDbPort(): int
+    {
+        return self::envInt('APP_DB_PORT', self::DB_PORT);
+    }
+
+    public static function getDbName(): string
+    {
+        return self::envString('APP_DB_NAME', self::DB_NAME);
+    }
+
+    public static function getDbUser(): string
+    {
+        return self::envString('APP_DB_USER', self::DB_USER);
+    }
+
+    public static function getDbPass(): string
+    {
+        return self::envString('APP_DB_PASS', self::DB_PASS);
+    }
+
+    public static function getDbCharset(): string
+    {
+        return self::envString('APP_DB_CHARSET', self::DB_CHARSET);
+    }
+
+    private static function envString(string $key, string $default): string
+    {
+        $value = getenv($key);
+        if ($value === false || $value === '') {
+            Database::bootEnv();
+            $value = getenv($key);
+        }
+
+        return ($value === false || $value === '') ? $default : $value;
+    }
+
+    private static function envInt(string $key, int $default): int
+    {
+        return (int)self::envString($key, (string)$default);
+    }
 }

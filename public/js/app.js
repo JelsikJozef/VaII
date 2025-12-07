@@ -4,6 +4,28 @@
 (function () {
     'use strict';
 
+    function displayFlashMessage() {
+        const body = document.body;
+        const flashMessage = body.dataset.flashSuccess;
+        if (!flashMessage) {
+            return;
+        }
+
+        let container = document.querySelector('.treasury-flash');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'alert alert-success treasury-flash';
+            const main = document.querySelector('.esn-main-content');
+            if (main) {
+                main.prepend(container);
+            } else {
+                document.body.prepend(container);
+            }
+        }
+
+        container.textContent = flashMessage;
+    }
+
     function initTreasuryForm() {
         const form = document.getElementById('treasury-form');
         if (!form) {
@@ -100,7 +122,6 @@
                 isValid = false;
             }
 
-            // optional UX: prevent obvious overdraft client-side
             if (isValid && type === 'withdrawal') {
                 const newBalance = baseBalance - (parseFloat(amountRaw.replace(',', '.')) || 0);
                 if (newBalance < 0) {
@@ -136,30 +157,29 @@
 
     function initTransactionsFilter() {
         const filterEl = document.getElementById('transaction-status-filter');
-        const table = document.getElementById('transactions-table');
+        const grid = document.getElementById('transactions-grid');
         const noTxMessage = document.getElementById('no-transactions-message');
 
-        if (!filterEl || !table) {
+        if (!filterEl || !grid) {
             return;
         }
 
-        const rows = table.querySelectorAll('tbody tr');
+        const cards = grid.querySelectorAll('.treasury-card');
 
         function applyStatusFilter(selected) {
             let visibleCount = 0;
 
-            rows.forEach(function (row) {
-                const status = row.dataset.status || '';
-                if (selected === 'all' || status === selected) {
-                    row.style.display = '';
+            cards.forEach(function (card) {
+                const status = card.dataset.status || '';
+                const visible = selected === 'all' || status === selected;
+                card.style.display = visible ? '' : 'none';
+                if (visible) {
                     visibleCount += 1;
-                } else {
-                    row.style.display = 'none';
                 }
             });
 
             if (noTxMessage) {
-                if (rows.length === 0) {
+                if (cards.length === 0) {
                     noTxMessage.classList.remove('d-none');
                 } else if (visibleCount === 0) {
                     noTxMessage.textContent = 'No transactions for selected status.';
@@ -174,12 +194,111 @@
             applyStatusFilter(filterEl.value);
         });
 
-        // initial filter application
         applyStatusFilter(filterEl.value || 'all');
     }
 
+    function renderTransactions(transactions) {
+        const grid = document.getElementById('transactions-grid');
+        const noTxMessage = document.getElementById('no-transactions-message');
+        const filterEl = document.getElementById('transaction-status-filter');
+
+        if (!grid || !noTxMessage) {
+            return;
+        }
+
+        grid.innerHTML = '';
+        if (!transactions || transactions.length === 0) {
+            noTxMessage.textContent = 'No transactions yet.';
+            noTxMessage.classList.remove('d-none');
+            return;
+        }
+
+        noTxMessage.classList.add('d-none');
+
+        const typeMap = {
+            deposit: { label: 'Deposit', chip: 'treasury-chip--deposit', amountClass: 'treasury-amount--positive' },
+            withdrawal: { label: 'Withdrawal', chip: 'treasury-chip--withdrawal', amountClass: 'treasury-amount--negative' },
+        };
+
+        const statusMap = {
+            pending: { label: 'Pending', className: 'treasury-status--pending' },
+            approved: { label: 'Approved', className: 'treasury-status--approved' },
+            rejected: { label: 'Rejected', className: 'treasury-status--rejected' },
+        };
+
+        transactions.forEach(function (tx) {
+            const type = tx.type || 'deposit';
+            const status = tx.status || 'pending';
+            const typeData = typeMap[type] || typeMap.deposit;
+            const statusData = statusMap[status] || statusMap.pending;
+            const amount = Number(tx.amount || 0);
+            const formattedAmount = (type === 'withdrawal' ? '-' : '+') + ' ' + amount.toFixed(2).replace('.', ',') + ' €';
+
+            const card = document.createElement('article');
+            card.className = 'treasury-card';
+            card.dataset.status = status;
+            card.innerHTML = `
+                <header class="treasury-card__header">
+                    <span class="treasury-chip ${typeData.chip}">${typeData.label}</span>
+                    <span class="treasury-amount ${typeData.amountClass}">${formattedAmount}</span>
+                </header>
+                <h3 class="treasury-card__title">${(tx.title || tx.description || 'Untitled transaction')}</h3>
+                <p class="treasury-card__meta">Proposed by ${(tx.proposed_by || 'Unspecified member')}</p>
+                <footer class="treasury-card__footer">
+                    <span class="treasury-card__date">${tx.created_at || ''}</span>
+                    <span class="treasury-status ${statusData.className}">${statusData.label}</span>
+                </footer>
+            `;
+            grid.appendChild(card);
+        });
+
+        if (filterEl && filterEl.value) {
+            const event = new Event('change');
+            filterEl.dispatchEvent(event);
+        }
+    }
+
+    function initTreasuryRefresh() {
+        const refreshBtn = document.getElementById('treasury-refresh-btn');
+        if (!refreshBtn) {
+            return;
+        }
+
+        refreshBtn.addEventListener('click', function () {
+            refreshBtn.disabled = true;
+            refreshBtn.classList.add('is-loading');
+
+            fetch('?c=treasury&a=refresh')
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Failed to refresh data');
+                    }
+                    return response.json();
+                })
+                .then(function (payload) {
+                    const balance = typeof payload.balance === 'number' ? payload.balance : 0;
+                    const balanceEl = document.querySelector('.treasury-hero__balance strong');
+                    if (balanceEl) {
+                        balanceEl.textContent = balance.toFixed(2).replace('.', ',') + ' €';
+                    }
+                    document.body.dataset.currentBalance = String(balance);
+                    renderTransactions(payload.transactions || []);
+                })
+                .catch(function (error) {
+                    console.error(error);
+                    alert('Unable to refresh treasury data right now.');
+                })
+                .finally(function () {
+                    refreshBtn.disabled = false;
+                    refreshBtn.classList.remove('is-loading');
+                });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+        displayFlashMessage();
         initTreasuryForm();
         initTransactionsFilter();
+        initTreasuryRefresh();
     });
 })();

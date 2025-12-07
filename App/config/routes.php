@@ -9,9 +9,9 @@ return [
         '/' => 'Home@index',
         '/treasury' => 'Treasury@index',
         '/treasury/new' => 'Treasury@new',
+        '/treasury/refresh' => 'Treasury@refresh',
     ],
     'POST' => [
         '/treasury/store' => 'Treasury@store',
     ],
 ];
-

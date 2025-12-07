@@ -91,7 +91,7 @@ class ViewResponse extends Response
             // derive things like the active navigation item in a robust way.
             $request = new Request();
 
-            $layoutData = $viewHelpers + [
+            $layoutData = $viewHelpers + $this->data + [
                 'contentHTML' => $contentHTML,
                 'request' => $request,
             ];
