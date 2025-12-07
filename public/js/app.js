@@ -1,9 +1,25 @@
 // Custom JS for VAIICKO project
-// Client-side validation, dynamic treasury balance preview, and transaction filtering.
+// Client-side validation, dynamic treasury balance preview, transaction filtering
+// and AJAX-based refresh for the ESN Treasury module.
 
 (function () {
     'use strict';
 
+    /**
+     * Display a success flash message if the backend stored one in the layout.
+     *
+     * The root layout writes the last flash message coming from the server
+     * into the <body> as a data attribute:
+     *   <body data-flash-success="...">
+     *
+     * This function:
+     *  - Reads that value
+     *  - Locates an existing .treasury-flash element or creates one
+     *  - Injects the message text into the element
+     *
+     * It is intentionally idempotent: if there is no message, it simply
+     * returns without touching the DOM.
+     */
     function displayFlashMessage() {
         const body = document.body;
         const flashMessage = body.dataset.flashSuccess;
@@ -26,6 +42,73 @@
         container.textContent = flashMessage;
     }
 
+    /**
+     * Display flash messages for success and error states.
+     *
+     * Reads `data-flash-success` and `data-flash-error` from the <body>
+     * element and shows them in dedicated flash message containers.
+     */
+    function displayFlashMessages() {
+        const body = document.body;
+        const success = body.dataset.flashSuccess;
+        const error = body.dataset.flashError;
+
+        if (success) {
+            renderFlash(success, 'alert-success');
+        }
+
+        if (error) {
+            renderFlash(error, 'alert-danger');
+        }
+    }
+
+    /**
+     * Render a flash message into the DOM.
+     *
+     * @param {string} message
+     *   The message text to display.
+     * @param {string} cssClass
+     *   Additional CSS class to apply to the container (e.g., 'alert-success'
+     *   or 'alert-danger').
+     */
+    function renderFlash(message, cssClass) {
+        let container = document.querySelector('.treasury-flash.' + cssClass);
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'alert treasury-flash ' + cssClass;
+            const main = document.querySelector('.esn-main-content');
+            if (main) {
+                main.prepend(container);
+            } else {
+                document.body.prepend(container);
+            }
+        }
+
+        container.textContent = message;
+    }
+
+    /**
+     * Initialize the Treasury transaction form.
+     *
+     * Responsibilities:
+     *  - Read the current treasury balance from the <body> attribute
+     *    (data-current-balance) that the layout sets from PHP.
+     *  - Show current and projected ("new") balance above the form and
+     *    recompute it live when the user changes the type or amount.
+     *  - Perform lightweight client-side validation that mirrors most of the
+     *    server-side rules in `TreasuryController::store`:
+     *      * required: type, amount, description
+     *      * type must be either "deposit" or "withdrawal"
+     *      * amount must be a positive number
+     *      * description must be <= 255 characters
+     *      * for withdrawals, do not allow going below zero balance
+     *  - Highlight invalid fields using Bootstrap's `is-invalid` class and
+     *    update the associated `.invalid-feedback` text when we have a
+     *    specific error message.
+     *
+     * This function only runs on pages that actually contain the
+     * #treasury-form element, so it is safe to call on every page.
+     */
     function initTreasuryForm() {
         const form = document.getElementById('treasury-form');
         if (!form) {
@@ -155,6 +238,22 @@
         recalculateBalancePreview();
     }
 
+    /**
+     * Enable client-side filtering of the transaction list by status.
+     *
+     * Expects the Treasury index page HTML structure:
+     *  - A <select id="transaction-status-filter"> with values:
+     *      * "all", "pending", "approved", "rejected"
+     *  - A grid container #transactions-grid with child elements that have
+     *    the class .treasury-card and a data-status="..." attribute.
+     *  - A paragraph #no-transactions-message that serves as an
+     *    "empty state" message.
+     *
+     * When the filter changes, we:
+     *  - show/hide cards based on their data-status
+     *  - update #no-transactions-message to reflect whether there are
+     *    any matching cards for the current filter.
+     */
     function initTransactionsFilter() {
         const filterEl = document.getElementById('transaction-status-filter');
         const grid = document.getElementById('transactions-grid');
@@ -197,6 +296,24 @@
         applyStatusFilter(filterEl.value || 'all');
     }
 
+    /**
+     * Render a fresh list of transactions on the Treasury index page.
+     *
+     * @param {Array<Object>} transactions
+     *   Raw transaction objects returned from the /treasury/refresh endpoint.
+     *   Each object typically contains:
+     *     - type: 'deposit' | 'withdrawal'
+     *     - status: 'pending' | 'approved' | 'rejected'
+     *     - amount: number-like value (in EUR)
+     *     - description/title: short text
+     *     - proposed_by: person who created the transaction
+     *     - created_at: timestamp string
+     *
+     * This function completely replaces the contents of #transactions-grid,
+     * creating one `.treasury-card` per transaction. It also keeps the current
+     * filter value and re-applies it so the user does not lose their selection
+     * after a refresh.
+     */
     function renderTransactions(transactions) {
         const grid = document.getElementById('transactions-grid');
         const noTxMessage = document.getElementById('no-transactions-message');
@@ -258,6 +375,22 @@
         }
     }
 
+    /**
+     * Wire up the "Refresh" button on the Treasury index page.
+     *
+     * Behaviour:
+     *  - Sends a GET request to `?c=treasury&a=refresh` when the user clicks
+     *    the button.
+     *  - While the request is in-flight, disables the button and adds a
+     *    CSS helper class `is-loading` so the UI can reflect the busy state.
+     *  - On success:
+     *      * Updates the summary balance in the hero section.
+     *      * Stores the new balance into `document.body.dataset.currentBalance`
+     *        so that if the user navigates to the form from this page, the
+     *        preview starts with a fresh value.
+     *      * Delegates to `renderTransactions()` to redraw the grid.
+     *  - On failure: logs the error and shows a simple alert.
+     */
     function initTreasuryRefresh() {
         const refreshBtn = document.getElementById('treasury-refresh-btn');
         if (!refreshBtn) {
@@ -295,8 +428,14 @@
         });
     }
 
+    /**
+     * Entrypoint: once the DOM is ready we attach all behaviour needed for
+     * the Treasury-related pages. Each initializer is defensive and will
+     * simply exit if the expected DOM elements are missing, so calling them
+     * globally is safe.
+     */
     document.addEventListener('DOMContentLoaded', function () {
-        displayFlashMessage();
+        displayFlashMessages();
         initTreasuryForm();
         initTransactionsFilter();
         initTreasuryRefresh();

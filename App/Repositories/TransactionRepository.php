@@ -78,4 +78,28 @@ class TransactionRepository
 
         return $row === false ? null : $row;
     }
+
+    /**
+     * Update an existing transaction.
+     */
+    public function update(int $id, string $type, float $amount, string $description, string $status): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE transactions SET type = :type, amount = :amount, description = :description, status = :status WHERE id = :id');
+        $stmt->execute([
+            'type' => $type,
+            'amount' => $amount,
+            'description' => $description,
+            'status' => $status,
+            'id' => $id,
+        ]);
+    }
+
+    /**
+     * Delete a transaction.
+     */
+    public function delete(int $id): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM transactions WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+    }
 }

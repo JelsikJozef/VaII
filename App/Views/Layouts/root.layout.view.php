@@ -49,7 +49,8 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
 </head>
 <body data-active-module="<?= htmlspecialchars($activeModule, ENT_QUOTES) ?>"
       data-current-balance="<?= isset($currentBalance) ? htmlspecialchars((string)$currentBalance, ENT_QUOTES) : '' ?>"
-      data-flash-success="<?= isset($successMessage) ? htmlspecialchars((string)$successMessage, ENT_QUOTES) : '' ?>">
+      data-flash-success="<?= isset($successMessage) ? htmlspecialchars((string)$successMessage, ENT_QUOTES) : '' ?>"
+      data-flash-error="<?= isset($errorMessage) ? htmlspecialchars((string)$errorMessage, ENT_QUOTES) : '' ?>">
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="<?= $link->url('Home.index') ?>">
@@ -92,6 +93,11 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
         <?php if (!empty($successMessage)): ?>
             <div class="alert alert-success treasury-flash" role="alert">
                 <?= htmlspecialchars((string)$successMessage, ENT_QUOTES) ?>
+            </div>
+        <?php endif; ?>
+        <?php if (!empty($errorMessage)): ?>
+            <div class="alert alert-danger treasury-flash" role="alert">
+                <?= htmlspecialchars((string)$errorMessage, ENT_QUOTES) ?>
             </div>
         <?php endif; ?>
         <?= $contentHTML ?>

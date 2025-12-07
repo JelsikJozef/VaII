@@ -138,8 +138,8 @@ body {
 
 /* 11. farebné stavy */
 .esn-status-pending {
-    background: rgba(236, 0, 140, 0.08);
-    color: #EC008C;
+    background: rgba(244, 123, 32, 0.12);
+    color: #c05621;
 }
 
 .esn-status-approved {
@@ -148,8 +148,8 @@ body {
 }
 
 .esn-status-rejected {
-    background: rgba(244, 123, 32, 0.12);
-    color: #c05621;
+    background: rgba(236, 0, 140, 0.08);
+    color: #EC008C;
 }
 
 /* 12. tabuľka v Treasury */

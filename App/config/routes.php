@@ -9,9 +9,12 @@ return [
         '/' => 'Home@index',
         '/treasury' => 'Treasury@index',
         '/treasury/new' => 'Treasury@new',
+        '/treasury/edit/{id}' => 'Treasury@edit',
+        '/treasury/delete/{id}' => 'Treasury@delete',
         '/treasury/refresh' => 'Treasury@refresh',
     ],
     'POST' => [
         '/treasury/store' => 'Treasury@store',
+        '/treasury/update/{id}' => 'Treasury@update',
     ],
 ];
