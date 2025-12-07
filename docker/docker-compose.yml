@@ -4,6 +4,8 @@ services:
     image: ghcr.io/thevajko/vaii-web-server:main
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html/public
+    env_file:
+      - ./../.env
     volumes:
       - ./../:/var/www/html/
     ports:
@@ -11,6 +13,8 @@ services:
     stdin_open: true
     tty: true
   db:
+    profiles:
+      - localdb
     image: mariadb
     volumes:
       - ./sql:/docker-entrypoint-initdb.d
@@ -20,8 +24,10 @@ services:
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     ports:
-      - "127.0.0.1:3306:3306"
+      - "127.0.0.1:3307:3306"
   adminer:
+    profiles:
+      - localdb
     links:
       - db
     depends_on:

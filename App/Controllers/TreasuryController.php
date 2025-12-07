@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+require_once __DIR__ . '/../../Framework/ClassLoader.php';
+
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;

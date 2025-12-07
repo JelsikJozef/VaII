@@ -27,7 +27,7 @@ class Configuration
     /**
      * Database connection settings for ESN DB.
      */
-    public const DB_HOST = '127.0.0.1'; // host from your IDE config (localhost)
+    public const DB_HOST = 'host.docker.internal';
     public const DB_PORT = 3307;       // external port mapped to esn-mariadb
     public const DB_NAME = 'esn_uniza';
     public const DB_USER = 'esn_user';
