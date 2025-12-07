@@ -1,5 +1,8 @@
 <?php
 
+/** @var \Framework\Support\View $view */
+$view->setLayout('root');
+
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var array $errors */
 /** @var string $type */
