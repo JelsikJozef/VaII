@@ -11,7 +11,7 @@ services:
       - APP_DB_PASS=${APP_DB_PASS}
       - APP_DB_CHARSET=${APP_DB_CHARSET}
     env_file:
-      - ./../.env
+      - .env
     volumes:
       - ./../:/var/www/html/
     ports:

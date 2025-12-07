@@ -2,9 +2,7 @@
 
 namespace App;
 
-use App\Configuration;
 use PDO;
-use PDOException;
 
 class Database
 {
@@ -13,16 +11,14 @@ class Database
     public static function getConnection(): PDO
     {
         if (self::$pdo === null) {
-            if (!getenv('APP_DB_HOST')) {
-                self::bootEnv();
-            }
+            self::bootEnv();
 
-            $host = getenv('APP_DB_HOST') ?: Configuration::DB_HOST;
-            $port = (int)(getenv('APP_DB_PORT') ?: Configuration::DB_PORT);
-            $dbName = getenv('APP_DB_NAME') ?: Configuration::DB_NAME;
-            $user = getenv('APP_DB_USER') ?: Configuration::DB_USER;
-            $pass = getenv('APP_DB_PASS') ?: Configuration::DB_PASS;
-            $charset = getenv('APP_DB_CHARSET') ?: 'utf8mb4';
+            $host = Configuration::getDbHost();
+            $port = Configuration::getDbPort();
+            $dbName = Configuration::getDbName();
+            $user = Configuration::getDbUser();
+            $pass = Configuration::getDbPass();
+            $charset = Configuration::getDbCharset();
 
             $dsn = sprintf(
                 'mysql:host=%s;port=%d;dbname=%s;charset=%s',
@@ -52,7 +48,7 @@ class Database
         return self::$pdo;
     }
 
-    private static function bootEnv(): void
+    public static function bootEnv(): void
     {
         $root = dirname(__DIR__);
         $envPath = $root . DIRECTORY_SEPARATOR . '.env';
@@ -73,7 +69,12 @@ class Database
             }
 
             $key = trim($parts[0]);
-            $value = trim($parts[1], " \t\"\'");
+            $value = trim($parts[1], " \t\"'" );
+
+            if (getenv($key) !== false && getenv($key) !== '') {
+                continue;
+            }
+
             putenv("{$key}={$value}");
             $_ENV[$key] = $value;
             $_SERVER[$key] = $value;

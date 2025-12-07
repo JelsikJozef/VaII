@@ -34,7 +34,7 @@ $getFieldError = static function (array $errors, string $field): string {
                 <div>New balance: <strong id="new-balance"><?= number_format($currentBalance, 2) ?></strong></div>
             </div>
 
-            <form id="treasury-form" method="post" action="<?= $link->url(['Treasury', 'store']) ?>" novalidate>
+            <form id="treasury-form" method="post" action="<?= $link->url('Treasury.store') ?>" novalidate>
                 <div class="mb-3">
                     <label for="type" class="form-label">Type</label>
                     <select

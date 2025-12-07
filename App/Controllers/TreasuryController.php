@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../Framework/ClassLoader.php';
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use Framework\Http\Responses\JsonResponse;
 use Framework\Http\Session;
 use App\Repositories\TransactionRepository;
 
@@ -111,6 +112,17 @@ class TreasuryController extends BaseController
         $this->flash('treasury.success', 'Transaction successfully registered.');
 
         return $this->redirect($this->url('Treasury.index'));
+    }
+
+    public function refresh(Request $request): JsonResponse
+    {
+        $transactions = $this->repo()->findAll();
+        $balance = $this->repo()->getBalance();
+
+        return $this->json([
+            'transactions' => $transactions,
+            'balance' => $balance,
+        ]);
     }
 
     private function repo(): TransactionRepository

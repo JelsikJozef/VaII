@@ -6,6 +6,7 @@ use Framework\Auth\DummyAuthenticator;
 use Framework\Core\ErrorHandler;
 use Framework\DB\DefaultConventions;
 
+
 /**
  * Class Configuration
  *
@@ -27,11 +28,12 @@ class Configuration
     /**
      * Database connection settings for ESN DB.
      */
-    public const DB_HOST = 'host.docker.internal';
-    public const DB_PORT = 3307;       // external port mapped to esn-mariadb
-    public const DB_NAME = 'esn_uniza';
-    public const DB_USER = 'esn_user';
-    public const DB_PASS = 'Test1234!';
+    public const DB_HOST = '127.0.0.1';
+    public const DB_PORT = 3306;
+    public const DB_NAME = 'app';
+    public const DB_USER = 'app';
+    public const DB_PASS = 'secret';
+    public const DB_CHARSET = 'utf8mb4';
 
     /**
      * URL for the login page. Users will be redirected here if authentication is required for an action.
@@ -87,6 +89,50 @@ class Configuration
 
     // Session key for storing the user identity
     public const IDENTITY_SESSION_KEY = 'fw.session.user.identity';
-}
 
-// Remove the array return at the bottom – App\Database will now read DB constants from this class
+    public static function getDbHost(): string
+    {
+        return self::envString('APP_DB_HOST', self::DB_HOST);
+    }
+
+    public static function getDbPort(): int
+    {
+        return self::envInt('APP_DB_PORT', self::DB_PORT);
+    }
+
+    public static function getDbName(): string
+    {
+        return self::envString('APP_DB_NAME', self::DB_NAME);
+    }
+
+    public static function getDbUser(): string
+    {
+        return self::envString('APP_DB_USER', self::DB_USER);
+    }
+
+    public static function getDbPass(): string
+    {
+        return self::envString('APP_DB_PASS', self::DB_PASS);
+    }
+
+    public static function getDbCharset(): string
+    {
+        return self::envString('APP_DB_CHARSET', self::DB_CHARSET);
+    }
+
+    private static function envString(string $key, string $default): string
+    {
+        $value = getenv($key);
+        if ($value === false || $value === '') {
+            Database::bootEnv();
+            $value = getenv($key);
+        }
+
+        return ($value === false || $value === '') ? $default : $value;
+    }
+
+    private static function envInt(string $key, int $default): int
+    {
+        return (int)self::envString($key, (string)$default);
+    }
+}

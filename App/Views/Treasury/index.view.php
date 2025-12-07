@@ -46,6 +46,9 @@ $typeMap = [
             <a href="<?= $link->url('Treasury.new', ['type' => 'deposit']) ?>" class="btn treasury-btn treasury-btn--deposit">
                 Add deposit
             </a>
+            <button type="button" id="treasury-refresh-btn" class="btn treasury-btn treasury-btn--refresh">
+                Refresh data
+            </button>
         </div>
     </section>
 
