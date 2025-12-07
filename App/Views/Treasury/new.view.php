@@ -94,7 +94,7 @@ $getFieldError = static function (array $errors, string $field): string {
                 </div>
 
                 <button type="submit" class="btn btn-primary esn-btn-primary">Save</button>
-                <a href="<?= $link->url(['Treasury', 'index']) ?>" class="btn btn-secondary ms-2">Cancel</a>
+                <a href="<?= $link->url('Treasury.index') ?>" class="btn btn-secondary ms-2">Cancel</a>
             </form>
         </div>
     </div>
