@@ -89,3 +89,16 @@ class Configuration
     // Session key for storing the user identity
     public const IDENTITY_SESSION_KEY = 'fw.session.user.identity';
 }
+
+
+return [
+
+    'db' => [
+        'host' => '127.0.0.1',
+        'dbname' => 'esn_uniza',
+        'user' => 'esn_user',
+        'password' => 'Test1234!',
+        'charset' => 'utf8mb4',
+    ],
+
+];
