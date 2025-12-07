@@ -43,6 +43,51 @@
     }
 
     /**
+     * Display flash messages for success and error states.
+     *
+     * Reads `data-flash-success` and `data-flash-error` from the <body>
+     * element and shows them in dedicated flash message containers.
+     */
+    function displayFlashMessages() {
+        const body = document.body;
+        const success = body.dataset.flashSuccess;
+        const error = body.dataset.flashError;
+
+        if (success) {
+            renderFlash(success, 'alert-success');
+        }
+
+        if (error) {
+            renderFlash(error, 'alert-danger');
+        }
+    }
+
+    /**
+     * Render a flash message into the DOM.
+     *
+     * @param {string} message
+     *   The message text to display.
+     * @param {string} cssClass
+     *   Additional CSS class to apply to the container (e.g., 'alert-success'
+     *   or 'alert-danger').
+     */
+    function renderFlash(message, cssClass) {
+        let container = document.querySelector('.treasury-flash.' + cssClass);
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'alert treasury-flash ' + cssClass;
+            const main = document.querySelector('.esn-main-content');
+            if (main) {
+                main.prepend(container);
+            } else {
+                document.body.prepend(container);
+            }
+        }
+
+        container.textContent = message;
+    }
+
+    /**
      * Initialize the Treasury transaction form.
      *
      * Responsibilities:
@@ -390,7 +435,7 @@
      * globally is safe.
      */
     document.addEventListener('DOMContentLoaded', function () {
-        displayFlashMessage();
+        displayFlashMessages();
         initTreasuryForm();
         initTransactionsFilter();
         initTreasuryRefresh();

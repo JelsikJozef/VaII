@@ -33,6 +33,7 @@ class TreasuryController extends BaseController
             'transactions' => $transactions,
             'currentBalance' => $balance,
             'successMessage' => $this->consumeFlash('treasury.success'),
+            'errorMessage' => $this->consumeFlash('treasury.error'),
         ]);
     }
 
@@ -66,33 +67,9 @@ class TreasuryController extends BaseController
         $amountRaw = (string)($request->post('amount') ?? '');
         $description = trim((string)($request->post('description') ?? ''));
 
-        $errors = [];
         $balance = $this->repo()->getBalance();
 
-        if ($type === '') {
-            $errors['type'][] = 'Type is required.';
-        } elseif (!in_array($type, ['deposit', 'withdrawal'], true)) {
-            $errors['type'][] = 'Type must be deposit or withdrawal.';
-        }
-
-        if ($amountRaw === '') {
-            $errors['amount'][] = 'Amount is required.';
-        } elseif (!is_numeric($amountRaw)) {
-            $errors['amount'][] = 'Amount must be a number.';
-        } else {
-            $amount = (float)$amountRaw;
-            if ($amount <= 0) {
-                $errors['amount'][] = 'Amount must be greater than 0.';
-            } elseif ($type === 'withdrawal' && $amount > $balance) {
-                $errors['amount'][] = 'Withdrawal cannot exceed current balance.';
-            }
-        }
-
-        if ($description === '') {
-            $errors['description'][] = 'Description is required.';
-        } elseif (mb_strlen($description) > 255) {
-            $errors['description'][] = 'Description must be at most 255 characters.';
-        }
+        $errors = $this->validateTransactionInput($type, $amountRaw, $description, $balance);
 
         if (!empty($errors)) {
             return $this->html([
@@ -102,7 +79,7 @@ class TreasuryController extends BaseController
                 'amount' => $amountRaw,
                 'description' => $description,
                 'currentBalance' => $balance,
-            ], 'Treasury/new');
+            ], 'new');
         }
 
         $amount = (float)$amountRaw;
@@ -123,6 +100,157 @@ class TreasuryController extends BaseController
             'transactions' => $transactions,
             'balance' => $balance,
         ]);
+    }
+
+    public function edit(Request $request): Response
+    {
+        $id = (int)($request->get('id') ?? 0);
+        if ($id <= 0) {
+            $this->flash('treasury.error', 'Transaction not found.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+
+        $transaction = $this->repo()->findById($id);
+        if ($transaction === null) {
+            $this->flash('treasury.error', 'Transaction not found.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+
+        $balance = $this->repo()->getBalance();
+
+        return $this->html([
+            'activeModule' => 'treasury',
+            'errors' => [],
+            'transactionId' => $id,
+            'type' => (string)($transaction['type'] ?? ''),
+            'amount' => (string)($transaction['amount'] ?? ''),
+            'description' => (string)($transaction['description'] ?? ''),
+            'status' => (string)($transaction['status'] ?? 'pending'),
+            'currentBalance' => $balance,
+        ], 'edit');
+    }
+
+    public function update(Request $request): Response
+    {
+        $id = (int)($request->get('id') ?? $request->post('id') ?? 0);
+        if ($id <= 0) {
+            $this->flash('treasury.error', 'Transaction not found.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+
+        $transaction = $this->repo()->findById($id);
+        if ($transaction === null) {
+            $this->flash('treasury.error', 'Transaction not found.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+
+        $type = trim((string)($request->post('type') ?? ''));
+        $amountRaw = (string)($request->post('amount') ?? '');
+        $description = trim((string)($request->post('description') ?? ''));
+        $status = trim((string)($request->post('status') ?? 'pending'));
+
+        $balance = $this->repo()->getBalance();
+
+        $errors = $this->validateTransactionInput($type, $amountRaw, $description, $balance, $transaction);
+
+        if ($status === '') {
+            $errors['status'][] = 'Status is required.';
+        } elseif (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
+            $errors['status'][] = 'Status must be pending, approved, or rejected.';
+        }
+
+        if (!empty($errors)) {
+            return $this->html([
+                'activeModule' => 'treasury',
+                'errors' => $errors,
+                'transactionId' => $id,
+                'type' => $type,
+                'amount' => $amountRaw,
+                'description' => $description,
+                'status' => $status,
+                'currentBalance' => $balance,
+            ], 'edit');
+        }
+
+        $amount = (float)$amountRaw;
+        $this->repo()->update($id, $type, $amount, $description, $status);
+
+        $this->flash('treasury.success', 'Transaction updated');
+
+        return $this->redirect($this->url('Treasury.index'));
+    }
+
+    public function delete(Request $request): Response
+    {
+        $id = (int)($request->get('id') ?? $request->post('id') ?? 0);
+        if ($id <= 0) {
+            $this->flash('treasury.error', 'Transaction not found.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+
+        $transaction = $this->repo()->findById($id);
+        if ($transaction === null) {
+            $this->flash('treasury.error', 'Transaction not found.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+
+        $this->repo()->delete($id);
+        $this->flash('treasury.success', 'Transaction deleted');
+
+        return $this->redirect($this->url('Treasury.index'));
+    }
+
+    /**
+     * Reuse validation rules for store/update operations.
+     */
+    private function validateTransactionInput(
+        string $type,
+        string $amountRaw,
+        string $description,
+        float $balance,
+        ?array $existingTransaction = null
+    ): array {
+        $errors = [];
+
+        if ($type === '') {
+            $errors['type'][] = 'Type is required.';
+        } elseif (!in_array($type, ['deposit', 'withdrawal'], true)) {
+            $errors['type'][] = 'Type must be deposit or withdrawal.';
+        }
+
+        if ($amountRaw === '') {
+            $errors['amount'][] = 'Amount is required.';
+        } elseif (!is_numeric($amountRaw)) {
+            $errors['amount'][] = 'Amount must be a number.';
+        } else {
+            $amount = (float)$amountRaw;
+            if ($amount <= 0) {
+                $errors['amount'][] = 'Amount must be greater than 0.';
+            } elseif ($type === 'withdrawal') {
+                $available = $balance;
+                if ($existingTransaction !== null) {
+                    $originalType = (string)($existingTransaction['type'] ?? 'deposit');
+                    $originalAmount = (float)($existingTransaction['amount'] ?? 0);
+                    if ($originalType === 'withdrawal') {
+                        $available += $originalAmount;
+                    } else {
+                        $available -= $originalAmount;
+                    }
+                }
+
+                if ($amount > $available) {
+                    $errors['amount'][] = 'Withdrawal cannot exceed current balance.';
+                }
+            }
+        }
+
+        if ($description === '') {
+            $errors['description'][] = 'Description is required.';
+        } elseif (mb_strlen($description) > 255) {
+            $errors['description'][] = 'Description must be at most 255 characters.';
+        }
+
+        return $errors;
     }
 
     private function repo(): TransactionRepository

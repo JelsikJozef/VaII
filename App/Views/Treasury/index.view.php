@@ -5,6 +5,8 @@ $view->setLayout('root');
 
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var array $transactions */
+/** @var string|null $errorMessage */
+/** @var string|null $successMessage */
 
 $transactions = $transactions ?? [];
 $currentBalance = $currentBalance ?? 0.0;
@@ -31,6 +33,12 @@ $typeMap = [
 ?>
 
 <div class="treasury-page">
+    <?php if (!empty($errorMessage)): ?>
+        <div class="alert alert-danger mb-3">
+            <?= htmlspecialchars($errorMessage, ENT_QUOTES) ?>
+        </div>
+    <?php endif; ?>
+
     <section class="treasury-hero">
         <div class="treasury-hero__eyebrow">ESN Treasury</div>
         <h1 class="treasury-hero__title">Welcome to the Treasury of ESN UNIZA</h1>
@@ -80,6 +88,8 @@ $typeMap = [
                     $title = trim((string)($tx['title'] ?? $tx['description'] ?? 'Untitled transaction'));
                     $proposedBy = trim((string)($tx['proposed_by'] ?? 'Unspecified member'));
                     $createdAt = $tx['created_at'] ?? '';
+                    $editUrl = $link->url('Treasury.edit', ['id' => $tx['id'] ?? 0]);
+                    $deleteUrl = $link->url('Treasury.delete', ['id' => $tx['id'] ?? 0]);
                 ?>
                 <article class="treasury-card" data-status="<?= htmlspecialchars($status, ENT_QUOTES) ?>">
                     <header class="treasury-card__header">
@@ -97,6 +107,13 @@ $typeMap = [
                         <span class="treasury-status <?= $statusData[1] ?>">
                             <?= htmlspecialchars($statusData[0], ENT_QUOTES) ?></span>
                     </footer>
+                    <div class="treasury-card__actions mt-3 d-flex gap-2">
+                        <a href="<?= $editUrl ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <form method="post" action="<?= $deleteUrl ?>" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this transaction?');">
+                            <input type="hidden" name="id" value="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </div>
                 </article>
                 <?php endforeach; ?>
             </div>
