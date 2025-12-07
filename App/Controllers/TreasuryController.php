@@ -5,6 +5,7 @@ namespace App\Controllers;
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use App\Repositories\TransactionRepository;
 
 class TreasuryController extends BaseController
 {
@@ -15,8 +16,12 @@ class TreasuryController extends BaseController
 
     public function index(Request $request): Response
     {
+        $repository = new TransactionRepository();
+        $transactions = $repository->findAll();
+
         return $this->html([
             'activeModule' => 'treasury',
+            'transactions' => $transactions,
         ]);
     }
 

@@ -12,13 +12,13 @@ class Database
     public static function getConnection(): PDO
     {
         if (self::$pdo === null) {
-            // načítame config
             $config = require __DIR__ . '/Configuration.php';
             $db = $config['db'];
 
             $dsn = sprintf(
-                'mysql:host=%s;dbname=%s;charset=%s',
+                'mysql:host=%s;port=%d;dbname=%s;charset=%s',
                 $db['host'],
+                $db['port'],
                 $db['dbname'],
                 $db['charset']
             );
@@ -41,4 +41,3 @@ class Database
         return self::$pdo;
     }
 }
-
