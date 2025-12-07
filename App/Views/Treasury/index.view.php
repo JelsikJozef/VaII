@@ -7,6 +7,7 @@ $view->setLayout('root');
 /** @var array $transactions */
 
 $transactions = $transactions ?? [];
+$currentBalance = $currentBalance ?? 0.0;
 
 $formatAmount = static function ($amount, string $type): string {
     $value = is_numeric($amount) ? (float)$amount : 0.0;
@@ -36,6 +37,7 @@ $typeMap = [
         <p class="treasury-hero__subtitle">
             Propose withdrawal or add deposit
         </p>
+        <p class="treasury-hero__balance">Current balance: <strong><?= number_format((float)$currentBalance, 2, ',', ' ') ?> €</strong></p>
         <div class="treasury-hero__cta">
             <!-- Use string destination "Treasury.new" + parameters; avoid array destination when passing $parameters -->
             <a href="<?= $link->url('Treasury.new', ['type' => 'withdrawal']) ?>" class="btn treasury-btn treasury-btn--withdrawal">

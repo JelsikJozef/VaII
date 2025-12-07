@@ -4,6 +4,12 @@ services:
     image: ghcr.io/thevajko/vaii-web-server:main
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html/public
+      - APP_DB_HOST=${APP_DB_HOST}
+      - APP_DB_PORT=${APP_DB_PORT}
+      - APP_DB_NAME=${APP_DB_NAME}
+      - APP_DB_USER=${APP_DB_USER}
+      - APP_DB_PASS=${APP_DB_PASS}
+      - APP_DB_CHARSET=${APP_DB_CHARSET}
     env_file:
       - ./../.env
     volumes:

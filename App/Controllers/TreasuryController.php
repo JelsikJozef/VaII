@@ -7,10 +7,16 @@ require_once __DIR__ . '/../../Framework/ClassLoader.php';
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use Framework\Http\Session;
 use App\Repositories\TransactionRepository;
 
 class TreasuryController extends BaseController
 {
+    private ?TransactionRepository $repository = null;
+
+    /** @var Session|null */
+    private ?Session $flashSession = null;
+
     public function authorize(Request $request, string $action): bool
     {
         return true;
@@ -18,18 +24,19 @@ class TreasuryController extends BaseController
 
     public function index(Request $request): Response
     {
-        $repository = new TransactionRepository();
-        $transactions = $repository->findAll();
+        $transactions = $this->repo()->findAll();
+        $balance = $this->repo()->getBalance();
 
         return $this->html([
             'activeModule' => 'treasury',
             'transactions' => $transactions,
+            'currentBalance' => $balance,
+            'successMessage' => $this->consumeFlash('treasury.success'),
         ]);
     }
 
     public function new(Request $request): Response
     {
-        // urcenie default hodnoty typu podla zdroja (query parameter ?type=deposit|withdrawal)
         $typeParam = (string)($request->get('type') ?? '');
         $defaultType = '';
         if ($typeParam === 'deposit') {
@@ -38,12 +45,15 @@ class TreasuryController extends BaseController
             $defaultType = 'withdrawal';
         }
 
+        $balance = $this->repo()->getBalance();
+
         $data = [
             'activeModule' => 'treasury',
             'errors' => [],
             'type' => $defaultType,
             'amount' => '',
             'description' => '',
+            'currentBalance' => $balance,
         ];
 
         return $this->html($data);
@@ -56,15 +66,14 @@ class TreasuryController extends BaseController
         $description = trim((string)($request->post('description') ?? ''));
 
         $errors = [];
+        $balance = $this->repo()->getBalance();
 
-        // validate type
         if ($type === '') {
             $errors['type'][] = 'Type is required.';
         } elseif (!in_array($type, ['deposit', 'withdrawal'], true)) {
             $errors['type'][] = 'Type must be deposit or withdrawal.';
         }
 
-        // validate amount
         if ($amountRaw === '') {
             $errors['amount'][] = 'Amount is required.';
         } elseif (!is_numeric($amountRaw)) {
@@ -73,17 +82,17 @@ class TreasuryController extends BaseController
             $amount = (float)$amountRaw;
             if ($amount <= 0) {
                 $errors['amount'][] = 'Amount must be greater than 0.';
+            } elseif ($type === 'withdrawal' && $amount > $balance) {
+                $errors['amount'][] = 'Withdrawal cannot exceed current balance.';
             }
         }
 
-        // validate description
         if ($description === '') {
             $errors['description'][] = 'Description is required.';
         } elseif (mb_strlen($description) > 255) {
             $errors['description'][] = 'Description must be at most 255 characters.';
         }
 
-        // Ak sú chyby, zobrazíme formulár znova v rámci jedného requestu (bez redirectu a bez session)
         if (!empty($errors)) {
             return $this->html([
                 'activeModule' => 'treasury',
@@ -91,12 +100,47 @@ class TreasuryController extends BaseController
                 'type' => $type,
                 'amount' => $amountRaw,
                 'description' => $description,
+                'currentBalance' => $balance,
             ], 'Treasury/new');
         }
 
-        // TODO: uloženie transakcie do databázy a prípadná aktualizácia zostatku
+        $amount = (float)$amountRaw;
+        $proposedBy = $this->user?->getName();
+        $this->repo()->create($type, $amount, $description, 'pending', $proposedBy);
 
-        // Po úspechu len redirect na index bez flash správy
-        return $this->redirect(['Treasury', 'index']);
+        $this->flash('treasury.success', 'Transaction successfully registered.');
+
+        return $this->redirect($this->url('Treasury.index'));
+    }
+
+    private function repo(): TransactionRepository
+    {
+        if ($this->repository === null) {
+            $this->repository = new TransactionRepository();
+        }
+
+        return $this->repository;
+    }
+
+    private function session(): Session
+    {
+        if ($this->flashSession === null) {
+            $this->flashSession = $this->app->getSession();
+        }
+
+        return $this->flashSession;
+    }
+
+    private function flash(string $key, mixed $value): void
+    {
+        $this->session()->set($key, $value);
+    }
+
+    private function consumeFlash(string $key): mixed
+    {
+        $value = $this->session()->get($key);
+        $this->session()->remove($key);
+
+        return $value;
     }
 }

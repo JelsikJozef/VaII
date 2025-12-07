@@ -34,5 +34,48 @@ class TransactionRepository
 
         return $rows;
     }
-}
 
+    /**
+     * Persist a treasury transaction.
+     */
+    public function create(string $type, float $amount, string $description, string $status = 'pending', ?string $proposedBy = null): int
+    {
+        $sql = 'INSERT INTO transactions (type, amount, description, status, proposed_by, created_at)' .
+            ' VALUES (:type, :amount, :description, :status, :proposed_by, NOW())';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'type' => $type,
+            'amount' => $amount,
+            'description' => $description,
+            'status' => $status,
+            'proposed_by' => $proposedBy,
+        ]);
+
+        return (int)$this->pdo->lastInsertId();
+    }
+
+    /**
+     * Calculate the current treasury balance (deposits minus withdrawals).
+     */
+    public function getBalance(): float
+    {
+        $sql = "SELECT COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END), 0) AS balance FROM transactions";
+        $stmt = $this->pdo->query($sql);
+        $row = $stmt->fetch();
+
+        return isset($row['balance']) ? (float)$row['balance'] : 0.0;
+    }
+
+    /**
+     * Fetch a single transaction by its ID.
+     */
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM transactions WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+
+        return $row === false ? null : $row;
+    }
+}

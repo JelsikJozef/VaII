@@ -5,11 +5,13 @@
 /** @var string $type */
 /** @var string $amount */
 /** @var string $description */
+/** @var float $currentBalance */
 
 $errors = $errors ?? [];
 $type = $type ?? '';
 $amount = $amount ?? '';
 $description = $description ?? '';
+$currentBalance = isset($currentBalance) && is_numeric($currentBalance) ? (float)$currentBalance : 0.0;
 
 $getFieldError = static function (array $errors, string $field): string {
     if (!isset($errors[$field]) || !is_array($errors[$field]) || count($errors[$field]) === 0) {
@@ -28,8 +30,8 @@ $getFieldError = static function (array $errors, string $field): string {
 
             <!-- Balance preview area for dynamic JS recalculation -->
             <div class="mb-3">
-                <div>Current balance: <strong id="current-balance">0.00</strong></div>
-                <div>New balance: <strong id="new-balance">0.00</strong></div>
+                <div>Current balance: <strong id="current-balance"><?= number_format($currentBalance, 2) ?></strong></div>
+                <div>New balance: <strong id="new-balance"><?= number_format($currentBalance, 2) ?></strong></div>
             </div>
 
             <form id="treasury-form" method="post" action="<?= $link->url(['Treasury', 'store']) ?>" novalidate>
