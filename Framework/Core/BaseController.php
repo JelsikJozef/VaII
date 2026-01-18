@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Add reusable auth guards (GitHub Copilot / ChatGPT), 2026-01-18
 
 namespace Framework\Core;
 
@@ -195,5 +196,30 @@ abstract class BaseController
         bool $appendParameters = false
     ): string {
         return $this->app->getLinkGenerator()->url($destination, $parameters, $absolute, $appendParameters);
+    }
+
+    /**
+     * Check if the user is logged in.
+     */
+    protected function requireLogin(): bool
+    {
+        return $this->user?->isLoggedIn() ?? false;
+    }
+
+    /**
+     * Check that the current user has one of the allowed roles.
+     */
+    protected function requireRole(array $roles): bool
+    {
+        if (!$this->requireLogin()) {
+            return false;
+        }
+
+        $currentRole = $this->user->getRole();
+        if ($currentRole === null) {
+            return false;
+        }
+
+        return in_array($currentRole, $roles, true);
     }
 }

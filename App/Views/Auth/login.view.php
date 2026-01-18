@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Login form view with validation messages (GitHub Copilot / ChatGPT), 2026-01-18
 
 /** @var string|null $message */
 /** @var \Framework\Support\LinkGenerator $link */
@@ -7,34 +8,38 @@
 $view->setLayout('auth');
 ?>
 
-<div class="container">
-    <div class="row">
-        <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
-            <div class="card card-signin my-5">
-                <div class="card-body">
-                    <h5 class="card-title text-center">Username</h5>
-                    <div class="text-center text-danger mb-3">
-                        <?= @$message ?>
-                    </div>
-                    <form class="form-signin" method="post" action="<?= $link->url("login") ?>">
-                        <div class="form-label-group mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input name="username" type="text" id="username" class="form-control" placeholder="Username"
-                                   required autofocus>
-                        </div>
+<div class="container mt-5" id="auth-login">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h1 class="mb-4">Login</h1>
 
-                        <div class="form-label-group mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input name="password" type="password" id="password" class="form-control"
-                                   placeholder="Password" required>
-                        </div>
-                        <div class="text-center">
-                            <button class="btn btn-primary" type="submit" name="submit">Log in
-                            </button>
-                        </div>
-                    </form>
+            <?php if (!empty($genericError)): ?>
+                <div class="alert alert-danger" role="alert">
+                    <?= htmlspecialchars((string)$genericError, ENT_QUOTES) ?>
                 </div>
-            </div>
+            <?php endif; ?>
+
+            <form method="post" action="<?= $link->url('Auth.login') ?>" novalidate>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control <?= !empty($errors['email']) ? 'is-invalid' : '' ?>" id="email" name="email" required value="<?= htmlspecialchars((string)($email ?? ''), ENT_QUOTES) ?>">
+                    <?php if (!empty($errors['email'])): ?>
+                        <div class="invalid-feedback">
+                            <?= htmlspecialchars((string)implode(' ', $errors['email']), ENT_QUOTES) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control <?= !empty($errors['password']) ? 'is-invalid' : '' ?>" id="password" name="password" required>
+                    <?php if (!empty($errors['password'])): ?>
+                        <div class="invalid-feedback">
+                            <?= htmlspecialchars((string)implode(' ', $errors['password']), ENT_QUOTES) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
         </div>
     </div>
 </div>

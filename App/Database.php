@@ -4,10 +4,45 @@ namespace App;
 
 use PDO;
 
+/**
+ * Simple application-wide database access helper.
+ *
+ * This class is responsible for:
+ *  - Bootstrapping environment variables from the `.env` file.
+ *  - Creating a single shared PDO instance configured using {@see Configuration}.
+ *  - Returning this PDO instance to callers via {@see Database::getConnection()}.
+ *
+ * Usage:
+ *
+ *  $pdo = Database::getConnection();
+ *  $stmt = $pdo->query('SELECT * FROM transactions');
+ */
 class Database
 {
+    /**
+     * Lazily-initialized shared PDO connection.
+     *
+     * Once created, the same PDO instance is reused for the lifetime
+     * of the PHP process (simple singleton-like behavior).
+     */
     private static ?PDO $pdo = null;
 
+    /**
+     * Get a configured PDO connection to the application's database.
+     *
+     * - On first call, this method:
+     *   - Loads environment variables from `.env` via {@see bootEnv()}.
+     *   - Reads DB configuration values from {@see Configuration}.
+     *   - Creates a PDO instance with sane defaults (exceptions enabled,
+     *     associative fetch mode, native prepared statements).
+     * - On subsequent calls, the already created PDO instance is returned.
+     *
+     * @return PDO Shared PDO connection instance.
+     *
+     * @throws \PDOException If creating the PDO instance fails.
+     *                       (Note: in the current implementation this is
+     *                       caught and `die()` is called instead.)
+     */
     public static function getConnection(): PDO
     {
         if (self::$pdo === null) {
@@ -48,6 +83,19 @@ class Database
         return self::$pdo;
     }
 
+    /**
+     * Load environment variables from the project's `.env` file.
+     *
+     * Behavior:
+     *  - Looks for `.env` in the project root (one level above `App/`).
+     *  - Ignores empty lines and lines starting with `#`.
+     *  - Parses lines in the form `KEY=VALUE`.
+     *  - Trims surrounding whitespace and quotes from values.
+     *  - Does not overwrite environment variables that are already set.
+     *  - Sets values into `putenv()`, `$_ENV` and `$_SERVER`.
+     *
+     * This method is idempotent and cheap to call multiple times.
+     */
     public static function bootEnv(): void
     {
         $root = dirname(__DIR__);

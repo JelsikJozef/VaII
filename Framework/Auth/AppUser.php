@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Extend AppUser with email/role helpers (GitHub Copilot / ChatGPT), 2026-01-18
 
 namespace Framework\Auth;
 
@@ -54,6 +55,37 @@ class AppUser
     public function getName(): ?string
     {
         return $this->identity?->getName();
+    }
+
+    /**
+     * Retrieves the email of the current user.
+     *
+     * @return string|null The email of the user if logged in; null otherwise.
+     */
+    public function getEmail(): ?string
+    {
+        return $this->identity?->getEmail();
+    }
+
+    /**
+     * Retrieves the role of the current user.
+     *
+     * @return string|null The role of the user if logged in; null otherwise.
+     */
+    public function getRole(): ?string
+    {
+        return $this->identity?->getRole();
+    }
+
+    /**
+     * Checks if the current user has the specified role.
+     *
+     * @param string $role The role to check.
+     * @return bool True if the user has the role; false otherwise.
+     */
+    public function isInRole(string $role): bool
+    {
+        return $this->identity !== null && $this->identity->getRole() === $role;
     }
 
     /**

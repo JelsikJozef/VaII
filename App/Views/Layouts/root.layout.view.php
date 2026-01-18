@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Auth-aware root layout navbar update (GitHub Copilot / ChatGPT), 2026-01-18
 
 /** @var string $contentHTML */
 /** @var \Framework\Core\IAuthenticator $auth */
@@ -82,6 +83,18 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
                 <li class="nav-item">
                     <a class="nav-link <?= $activeModule === 'polls' ? 'active' : '' ?>" href="/polls">Polls</a>
                 </li>
+                <?php if ($user?->isLoggedIn()): ?>
+                    <li class="nav-item">
+                        <span class="nav-link disabled"><?= htmlspecialchars((string)($user->getName() ?? $user->getEmail()), ENT_QUOTES) ?></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= $link->url('Auth.logout') ?>">Logout</a>
+                    </li>
+                <?php else: ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?= $activeModule === 'auth' ? 'active' : '' ?>" href="<?= $link->url('Auth.loginForm') ?>">Login</a>
+                    </li>
+                <?php endif; ?>
             </ul>
         </div>
     </div>
