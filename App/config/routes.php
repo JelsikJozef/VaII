@@ -15,10 +15,16 @@ return [
         '/treasury/edit/{id}' => 'Treasury@edit',
         '/treasury/delete/{id}' => 'Treasury@delete',
         '/treasury/refresh' => 'Treasury@refresh',
+        '/esncards' => 'Esncards@index',
+        '/esncards/new' => 'Esncards@new',
+        '/esncards/edit/{id}' => 'Esncards@edit',
+        '/esncards/delete/{id}' => 'Esncards@delete',
     ],
     'POST' => [
         '/login' => 'Auth@login',
         '/treasury/store' => 'Treasury@store',
         '/treasury/update/{id}' => 'Treasury@update',
+        '/esncards/store' => 'Esncards@store',
+        '/esncards/update/{id}' => 'Esncards@update',
     ],
 ];
