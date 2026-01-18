@@ -153,8 +153,9 @@ class TreasuryController extends BaseController
         }
 
         $amount = (float)$amountRaw;
-        $proposedBy = $this->user?->getName();
-        $this->repo()->create($type, $amount, $description, 'pending', $proposedBy);
+        $cashboxId = $this->repo()->ensureDefaultCashboxId();
+        $createdBy = $this->user?->getIdentity()?->getId();
+        $this->repo()->create($cashboxId, $type, $amount, $description, 'pending', $createdBy, null);
 
         $this->flash('treasury.success', 'Transaction successfully registered.');
 

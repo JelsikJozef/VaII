@@ -67,26 +67,30 @@ class TransactionRepository
      * used by {@see getBalance()} to determine whether the amount
      * increases or decreases the treasury.
      *
+     * @param int         $cashboxId   Cashbox identifier.
      * @param string      $type        Transaction type (e.g. "deposit", "withdrawal").
      * @param float       $amount      Positive monetary amount of the transaction.
      * @param string      $description Human‑readable description or note.
      * @param string      $status      Workflow status (e.g. "pending", "approved").
-     * @param string|null $proposedBy  Optional identifier of the user who proposed it.
+     * @param int|null    $createdBy   Optional identifier of the user who created it.
+     * @param int|null    $approvedBy  Optional identifier of the user who approved it.
      *
      * @return int The auto‑generated ID of the newly created transaction.
      */
-    public function create(string $type, float $amount, string $description, string $status = 'pending', ?string $proposedBy = null): int
+    public function create(int $cashboxId, string $type, float $amount, string $description, string $status = 'pending', ?int $createdBy = null, ?int $approvedBy = null): int
     {
-        $sql = 'INSERT INTO transactions (type, amount, description, status, proposed_by, created_at)' .
-            ' VALUES (:type, :amount, :description, :status, :proposed_by, NOW())';
+        $sql = 'INSERT INTO transactions (cashbox_id, type, amount, description, status, created_by, approved_by, created_at, approved_at)' .
+            ' VALUES (:cashbox_id, :type, :amount, :description, :status, :created_by, :approved_by, NOW(), NULL)';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
+            'cashbox_id' => $cashboxId,
             'type' => $type,
             'amount' => $amount,
             'description' => $description,
             'status' => $status,
-            'proposed_by' => $proposedBy,
+            'created_by' => $createdBy,
+            'approved_by' => $approvedBy,
         ]);
 
         return (int)$this->pdo->lastInsertId();
@@ -167,5 +171,22 @@ class TransactionRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM transactions WHERE id = :id');
         $stmt->execute(['id' => $id]);
+    }
+
+    /**
+     * Ensure at least one cashbox exists and return its id.
+     */
+    public function ensureDefaultCashboxId(): int
+    {
+        $existing = $this->pdo->query('SELECT id FROM cashboxes ORDER BY id ASC LIMIT 1');
+        $id = $existing?->fetchColumn();
+        if ($id !== false && $id !== null) {
+            return (int)$id;
+        }
+
+        $stmt = $this->pdo->prepare('INSERT INTO cashboxes (name, start_date, initial_balance) VALUES (:name, CURDATE(), 0)');
+        $stmt->execute(['name' => 'Default cashbox']);
+
+        return (int)$this->pdo->lastInsertId();
     }
 }

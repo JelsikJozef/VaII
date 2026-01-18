@@ -86,7 +86,8 @@ $typeMap = [
                     $typeData = $typeMap[$type] ?? $typeMap['deposit'];
                     $statusData = $statusMap[$status] ?? $statusMap['pending'];
                     $title = trim((string)($tx['title'] ?? $tx['description'] ?? 'Untitled transaction'));
-                    $proposedBy = trim((string)($tx['proposed_by'] ?? 'Unspecified member'));
+                    $proposedBy = trim((string)($tx['created_by'] ?? ''));
+                    $proposedBy = $proposedBy !== '' ? 'User #' . $proposedBy : 'Unspecified member';
                     $createdAt = $tx['created_at'] ?? '';
                     $editUrl = $link->url('Treasury.edit', ['id' => $tx['id'] ?? 0]);
                     $deleteUrl = $link->url('Treasury.delete', ['id' => $tx['id'] ?? 0]);
