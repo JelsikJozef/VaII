@@ -19,6 +19,11 @@ return [
         '/esncards/new' => 'Esncards@new',
         '/esncards/edit/{id}' => 'Esncards@edit',
         '/esncards/delete/{id}' => 'Esncards@delete',
+        '/manual' => 'Manual@index',
+        '/manual/new' => 'Manual@new',
+        '/manual/edit/{id}' => 'Manual@edit',
+        '/manual/delete/{id}' => 'Manual@delete',
+        '/manual/{id}' => 'Manual@show',
     ],
     'POST' => [
         '/login' => 'Auth@login',
@@ -26,5 +31,7 @@ return [
         '/treasury/update/{id}' => 'Treasury@update',
         '/esncards/store' => 'Esncards@store',
         '/esncards/update/{id}' => 'Esncards@update',
+        '/manual/store' => 'Manual@store',
+        '/manual/update/{id}' => 'Manual@update',
     ],
 ];

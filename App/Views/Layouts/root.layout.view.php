@@ -75,7 +75,7 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
                     <a class="nav-link <?= $activeModule === 'esncards' ? 'active' : '' ?>" href="<?= $link->url('Esncards.index') ?>">ESNcards</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= $activeModule === 'manual' ? 'active' : '' ?>" href="/manual">Semester Manual</a>
+                    <a class="nav-link <?= $activeModule === 'manual' ? 'active' : '' ?>" href="<?= $link->url('Manual.index') ?>">Semester Manual</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?= $activeModule === 'profile' ? 'active' : '' ?>" href="/profile">Profile</a>

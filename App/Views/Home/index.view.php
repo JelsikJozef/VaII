@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Update module links for manual card (GitHub Copilot / ChatGPT), 2026-01-18
 
 /** @var \Framework\Support\LinkGenerator $link */
 ?>
@@ -34,7 +35,7 @@
         </div>
 
         <div class="col-12 col-md-6 col-lg-3">
-            <a href="/manual" class="text-decoration-none text-reset">
+            <a href="<?= $link->url(['Manual', 'index']) ?>" class="text-decoration-none text-reset">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Semester Manual</h5>

@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Guard session start to avoid duplicate warnings (GitHub Copilot / ChatGPT), 2026-01-18
 
 namespace Framework\Http;
 
@@ -28,7 +29,9 @@ class Session
      */
     public function __construct()
     {
-        session_start();
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
         $this->sessionData = &$_SESSION;
     }
 
@@ -74,6 +77,11 @@ class Session
     public function remove(string $key): void
     {
         unset($this->sessionData[$key]);
+    }
+
+    public function unset(string $key): void
+    {
+        $this->remove($key);
     }
 
     /**
