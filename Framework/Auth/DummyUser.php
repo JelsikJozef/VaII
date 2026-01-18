@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Align DummyUser with expanded identity contract (GitHub Copilot / ChatGPT), 2026-01-18
 
 namespace Framework\Auth;
 
@@ -33,5 +34,15 @@ class DummyUser implements IIdentity
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getEmail(): string
+    {
+        return 'dummy@example.com';
+    }
+
+    public function getRole(): string
+    {
+        return 'admin';
     }
 }

@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Expand identity contract with email and role accessors (GitHub Copilot / ChatGPT), 2026-01-18
 
 namespace Framework\Core;
 
@@ -13,5 +14,6 @@ namespace Framework\Core;
 interface IIdentity
 {
     public function getName(): string;
+    public function getEmail(): string;
+    public function getRole(): string;
 }
-

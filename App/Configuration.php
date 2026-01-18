@@ -1,7 +1,9 @@
 <?php
+// AI-GENERATED: Switch to DB authenticator and login URL (GitHub Copilot / ChatGPT), 2026-01-18
 
 namespace App;
 
+use App\Auth\DbAuthenticator;
 use Framework\Auth\DummyAuthenticator;
 use Framework\Core\ErrorHandler;
 use Framework\DB\DefaultConventions;
@@ -38,7 +40,7 @@ class Configuration
     /**
      * URL for the login page. Users will be redirected here if authentication is required for an action.
      */
-    public const LOGIN_URL = '?c=auth&a=login';
+    public const LOGIN_URL = '?c=auth&a=loginForm';
 
     /**
      * Prefix for the default view files located in the App/Views directory. The view file format is
@@ -67,7 +69,7 @@ class Configuration
      * Class name for the authenticator. This class must implement the IAuthenticator interface. Comment out this line
      * if authentication is not required in the application.
      */
-    public const AUTH_CLASS = DummyAuthenticator::class;
+    public const AUTH_CLASS = DbAuthenticator::class;
 
     /**
      * Class name for the error handler. This class must implement the IHandleError interface.
