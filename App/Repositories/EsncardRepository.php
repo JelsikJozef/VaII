@@ -24,8 +24,9 @@ class EsncardRepository
         $params = [];
 
         if ($search !== null && trim($search) !== '') {
-            $sql .= ' AND (card_number LIKE :q OR assigned_to_email LIKE :q)';
-            $params['q'] = '%' . trim($search) . '%';
+            $sql .= ' AND (card_number LIKE :q_card OR assigned_to_email LIKE :q_email)';
+            $params['q_card'] = '%' . trim($search) . '%';
+            $params['q_email'] = '%' . trim($search) . '%';
         }
 
         if ($status !== null && trim($status) !== '') {

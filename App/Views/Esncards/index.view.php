@@ -38,6 +38,8 @@ $statusBadge = static function (string $value): array {
     </div>
 
     <form method="get" action="<?= $link->url('Esncards.index') ?>" class="row g-2 align-items-end mb-3">
+        <input type="hidden" name="c" value="esncards">
+        <input type="hidden" name="a" value="index">
         <div class="col-md-6">
             <label for="search" class="form-label">Search by card number or email</label>
             <input type="text" name="q" id="search" class="form-control" value="<?= htmlspecialchars($search, ENT_QUOTES) ?>" placeholder="Search...">
