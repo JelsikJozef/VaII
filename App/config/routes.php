@@ -24,6 +24,7 @@ return [
         '/manual/edit/{id}' => 'Manual@edit',
         '/manual/delete/{id}' => 'Manual@delete',
         '/manual/{id}' => 'Manual@show',
+        '/manual/{id}/attachments/delete/{attId}' => 'Manual@deleteAttachment',
     ],
     'POST' => [
         '/login' => 'Auth@login',
@@ -33,5 +34,7 @@ return [
         '/esncards/update/{id}' => 'Esncards@update',
         '/manual/store' => 'Manual@store',
         '/manual/update/{id}' => 'Manual@update',
+        '/manual/{id}/attachments/upload' => 'Manual@uploadAttachmentJson',
+        '/manual/{id}/attachments/delete/{attId}' => 'Manual@deleteAttachment',
     ],
 ];

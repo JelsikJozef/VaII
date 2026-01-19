@@ -9,6 +9,7 @@ use App\Repositories\ManualRepository;
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use Framework\Http\Responses\JsonResponse;
 use Framework\Http\Session;
 
 class ManualController extends BaseController
@@ -66,9 +67,12 @@ class ManualController extends BaseController
             return $this->redirect($this->url('Manual.index'));
         }
 
+        $attachments = $this->repo()->listAttachments($id);
+
         return $this->html([
             'activeModule' => 'manual',
             'article' => $article,
+            'attachments' => $attachments,
             'canManage' => $this->requireRole(['admin']),
             'successMessage' => $this->consumeFlash('manual.success'),
             'errorMessage' => $this->consumeFlash('manual.error'),
@@ -191,6 +195,162 @@ class ManualController extends BaseController
         return $this->redirect($this->url('Manual.index'));
     }
 
+    public function uploadAttachmentJson(Request $request): Response
+    {
+        if (!$this->requireRole(['admin'])) {
+            if (!$request->isAjax()) {
+                $this->flash('manual.error', 'Forbidden');
+                return $this->redirect($this->url('Manual.show', ['id' => (int)($request->get('id') ?? 0)]));
+            }
+            return $this->attachmentError('Forbidden', 403);
+        }
+
+        $articleId = (int)($request->get('id') ?? 0);
+        if ($articleId <= 0) {
+            if (!$request->isAjax()) {
+                $this->flash('manual.error', 'Article not found.');
+                return $this->redirect($this->url('Manual.index'));
+            }
+            return $this->attachmentError('Article not found.', 404);
+        }
+
+        $article = $this->repo()->findArticleById($articleId);
+        if ($article === null) {
+            if (!$request->isAjax()) {
+                $this->flash('manual.error', 'Article not found.');
+                return $this->redirect($this->url('Manual.index'));
+            }
+            return $this->attachmentError('Article not found.', 404);
+        }
+
+        $uploaded = $request->file('file');
+        if ($uploaded === null) {
+            if (!$request->isAjax()) {
+                $this->flash('manual.error', 'File is required.');
+                return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
+            }
+            return $this->attachmentError('File is required.', 400, ['file' => ['File is required.']]);
+        }
+
+        if (!$uploaded->isOk()) {
+            $msg = $uploaded->getErrorMessage() ?? 'Upload failed.';
+            if (!$request->isAjax()) {
+                $this->flash('manual.error', $msg);
+                return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
+            }
+            return $this->attachmentError($msg, 400, ['file' => [$msg]]);
+        }
+
+        $maxSize = 10 * 1024 * 1024;
+        if ($uploaded->getSize() > $maxSize) {
+            if (!$request->isAjax()) {
+                $this->flash('manual.error', 'File is too large (max 10 MB).');
+                return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
+            }
+            return $this->attachmentError('File is too large (max 10 MB).', 400, ['file' => ['File is too large (max 10 MB).']]);
+        }
+
+        $mime = $this->detectMimeType($uploaded->getFileTempPath()) ?? $uploaded->getType();
+        $allowed = [
+            'application/pdf' => 'pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg',
+        ];
+
+        if (!array_key_exists($mime, $allowed)) {
+            return $this->attachmentError('Unsupported file type.', 400, ['file' => ['Allowed types: PDF, DOCX, PNG, JPG.']]);
+        }
+
+        $extension = $allowed[$mime];
+        $originalName = $this->sanitizeOriginalFilename($uploaded->getName());
+        $storageDir = $this->getAttachmentStorageDir();
+
+        if (!is_dir($storageDir) && !mkdir($storageDir, 0775, true) && !is_dir($storageDir)) {
+            return $this->attachmentError('Storage path unavailable.', 500);
+        }
+
+        $storedName = '';
+        $targetPath = '';
+        do {
+            $storedName = $this->generateStoredFilename($extension);
+            $targetPath = $storageDir . DIRECTORY_SEPARATOR . $storedName;
+        } while (file_exists($targetPath));
+
+        if (!$uploaded->store($targetPath)) {
+            return $this->attachmentError('Failed to save uploaded file.', 500, ['file' => ['Failed to save uploaded file.']]);
+        }
+
+        $relativePath = 'uploads/manual/' . $storedName;
+
+        try {
+            $attachmentId = $this->repo()->addAttachment($articleId, $relativePath, null);
+        } catch (\Throwable $e) {
+            @unlink($targetPath);
+            if (!$request->isAjax()) {
+                $this->flash('manual.error', 'Could not save attachment.');
+                return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
+            }
+            return $this->attachmentError('Could not save attachment.', 500);
+        }
+
+        if (!$request->isAjax()) {
+            $this->flash('manual.success', 'Attachment uploaded.');
+            return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
+        }
+
+        return $this->json([
+            'ok' => true,
+            'attachment' => [
+                'id' => $attachmentId,
+                'file_path' => $relativePath,
+                'url' => null,
+                'description' => null,
+            ],
+        ]);
+    }
+
+    public function deleteAttachment(Request $request): Response
+    {
+        if (!$this->requireRole(['admin'])) {
+            $this->flash('manual.error', 'You are not allowed to delete attachments.');
+            return $this->redirect($this->url('Manual.index'));
+        }
+
+        $articleId = (int)($request->get('id') ?? 0);
+        $attachmentId = (int)($request->get('attId') ?? $request->post('attId') ?? 0);
+
+        if ($articleId <= 0 || $attachmentId <= 0) {
+            $this->flash('manual.error', 'Attachment not found.');
+            return $this->redirect($this->url('Manual.index'));
+        }
+
+        $article = $this->repo()->findArticleById($articleId);
+        if ($article === null) {
+            $this->flash('manual.error', 'Article not found.');
+            return $this->redirect($this->url('Manual.index'));
+        }
+
+        $attachment = $this->repo()->findAttachmentById($attachmentId);
+        if ($attachment === null || (int)($attachment['article_id'] ?? 0) !== $articleId) {
+            $this->flash('manual.error', 'Attachment not found.');
+            return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
+        }
+
+        $filePath = (string)($attachment['file_path'] ?? '');
+        if ($filePath !== '') {
+            $fullPath = $this->getPublicDir() . DIRECTORY_SEPARATOR . str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $filePath);
+            if (is_file($fullPath)) {
+                @unlink($fullPath);
+            }
+        }
+
+        $this->repo()->deleteAttachment($attachmentId);
+
+        $this->flash('manual.success', 'Attachment deleted.');
+        return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
+    }
+
     private function collectInput(Request $request): array
     {
         return [
@@ -248,6 +408,60 @@ class ManualController extends BaseController
         }
 
         return $this->repository;
+    }
+
+    private function sanitizeOriginalFilename(string $name): string
+    {
+        $trimmed = trim(str_replace("\0", '', $name));
+        $basename = basename($trimmed);
+        $safe = preg_replace('/[^A-Za-z0-9._-]+/', '_', $basename);
+        if ($safe === '') {
+            $safe = 'file';
+        }
+        return mb_substr($safe, 0, 255);
+    }
+
+    private function generateStoredFilename(string $extension): string
+    {
+        $base = bin2hex(random_bytes(16));
+        return $base . '.' . $extension;
+    }
+
+    private function getAttachmentStorageDir(): string
+    {
+        return $this->getPublicDir() . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'manual';
+    }
+
+    private function getPublicDir(): string
+    {
+        $publicDir = realpath(__DIR__ . '/../../public');
+        if ($publicDir === false) {
+            $publicDir = __DIR__ . '/../../public';
+        }
+        return rtrim($publicDir, DIRECTORY_SEPARATOR);
+    }
+
+    private function detectMimeType(string $path): ?string
+    {
+        if (!is_file($path)) {
+            return null;
+        }
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo === false) {
+            return null;
+        }
+        $mime = finfo_file($finfo, $path) ?: null;
+        finfo_close($finfo);
+        return $mime ? strtolower($mime) : null;
+    }
+
+    private function attachmentError(string $message, int $status, array $fieldErrors = []): JsonResponse
+    {
+        return $this->json([
+            'ok' => false,
+            'message' => $message,
+            'fields' => $fieldErrors,
+        ])->setStatusCode($status);
     }
 
     private function flash(string $key, mixed $value): void

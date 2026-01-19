@@ -238,15 +238,21 @@ B) knowledge_articles
 - created_at DATETIME NOT NULL
 - updated_at DATETIME NOT NULL
 
-C) attachments
-- id INT PK AUTO_INCREMENT
-- article_id INT NOT NULL (FK -> knowledge_articles.id ON DELETE CASCADE)
-- filename_original VARCHAR(255) NOT NULL
-- filename_stored VARCHAR(255) NOT NULL
-- mime VARCHAR(255) NOT NULL
-- size_bytes INT NOT NULL
-- uploaded_by_user_id INT NULL
-- created_at DATETIME NOT NULL
+C) attachments 
+
+id INT PK AUTO_INCREMENT
+article_id INT NOT NULL (FK -> knowledge_articles.id ON DELETE CASCADE)
+file_path VARCHAR(512) NULL      -- stored file path relative to public/, e.g. "uploads/manual/uuid.pdf"
+url VARCHAR(512) NULL            -- optional external link
+description VARCHAR(255) NULL    -- optional label
+created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+
+Indexes:
+attachments(article_id)
+
+Constraint:
+(file_path IS NOT NULL AND file_path <> '') OR (url IS NOT NULL AND url <> '')
+
 
 Indexes:
 - attachments(article_id)

@@ -1,3 +1,4 @@
+// AI-GENERATED: Frontend helpers (GitHub Copilot / ChatGPT), 2026-01-18
 // Custom JS for VAIICKO project
 // Client-side validation, dynamic treasury balance preview, transaction filtering
 // and AJAX-based refresh for the ESN Treasury module.
@@ -429,6 +430,163 @@
     }
 
     /**
+     * Escape HTML special characters in a string.
+     *
+     * @param {string} value
+     *   The input string to escape.
+     * @return {string}
+     *   The escaped string.
+     */
+    function escapeHtml(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    /**
+     * Convert a file size in bytes to a human-readable string.
+     *
+     * @param {number} bytes
+     *   The file size in bytes.
+     * @return {string}
+     *   The human-readable file size.
+     */
+    function humanFileSize(bytes) {
+        if (!bytes || Number.isNaN(Number(bytes))) {
+            return '';
+        }
+        const kb = bytes / 1024;
+        if (kb < 1024) {
+            return kb.toFixed(1) + ' KB';
+        }
+        return (kb / 1024).toFixed(2) + ' MB';
+    }
+
+    /**
+     * Initialize the manual attachments section on the manual detail page.
+     *
+     * Responsibilities:
+     *  - Handle file uploads via AJAX when the user submits the attachment form.
+     *  - Display the list of current attachments with links to download and delete.
+     *  - Provide feedback during the upload process and handle errors.
+     */
+    function initManualAttachments() {
+        const form = document.getElementById('attachmentUploadForm');
+        const list = document.getElementById('attachmentsList');
+        const emptyState = document.getElementById('attachments-empty');
+
+        if (!form || !list) {
+            return;
+        }
+
+        const fileInput = form.querySelector('input[type="file"]');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const deleteTemplate = form.dataset.deleteTemplate || '';
+
+        function setBusy(isBusy) {
+            if (!submitBtn) return;
+            submitBtn.disabled = isBusy;
+            submitBtn.classList.toggle('disabled', isBusy);
+            submitBtn.textContent = isBusy ? 'Uploading…' : 'Upload';
+        }
+
+        function toggleEmptyState() {
+            if (emptyState) {
+                emptyState.classList[list.children.length ? 'add' : 'remove']('d-none');
+            }
+            list.classList.remove('d-none');
+        }
+
+        function createDeleteForm(attachmentId) {
+            if (!deleteTemplate) {
+                return '';
+            }
+            const action = deleteTemplate.replace('__ATT_ID__', String(attachmentId));
+            return (
+                '<form method="post" action="' + escapeHtml(action) + '" class="d-inline" onsubmit="return confirm(\'Delete this attachment?\');">' +
+                '<input type="hidden" name="attId" value="' + escapeHtml(attachmentId) + '">' +
+                '<button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>' +
+                '</form>'
+            );
+        }
+
+        function appendAttachment(attachment) {
+            if (!attachment || !attachment.id || (!attachment.file_path && !attachment.url)) {
+                return;
+            }
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.dataset.attachmentId = String(attachment.id);
+
+            const path = attachment.file_path || '';
+            const url = path ? '/' + path.replace(/^\/+/, '') : (attachment.url || '');
+            const label = path ? path.split('/').pop() || path : (url || 'attachment');
+
+            const linkHtml = url
+                ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' + escapeHtml(label) + '</a>'
+                : '<span class="text-muted">(no link)</span>';
+            const left = document.createElement('div');
+            left.innerHTML = linkHtml;
+
+            const right = document.createElement('div');
+            right.innerHTML = createDeleteForm(attachment.id);
+
+            li.appendChild(left);
+            if (right.innerHTML.trim() !== '') {
+                li.appendChild(right);
+            }
+
+            list.appendChild(li);
+            toggleEmptyState();
+        }
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                alert('Please choose a file to upload.');
+                return;
+            }
+
+            const formData = new FormData(form);
+            setBusy(true);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+                .then(function (response) {
+                    return response.json().catch(function () {
+                        throw new Error('Upload failed.');
+                    });
+                })
+                .then(function (payload) {
+                    if (!payload || payload.ok !== true) {
+                        const message = (payload && payload.message) || 'Upload failed.';
+                        const fieldMsg = payload && payload.fields && payload.fields.file ? payload.fields.file.join(' ') : '';
+                        throw new Error(fieldMsg || message);
+                    }
+                    appendAttachment(payload.attachment || {});
+                    if (fileInput) {
+                        fileInput.value = '';
+                    }
+                })
+                .catch(function (error) {
+                    alert(error.message || 'Upload failed.');
+                })
+                .finally(function () {
+                    setBusy(false);
+                });
+        });
+    }
+
+    /**
      * Entrypoint: once the DOM is ready we attach all behaviour needed for
      * the Treasury-related pages. Each initializer is defensive and will
      * simply exit if the expected DOM elements are missing, so calling them
@@ -439,5 +597,6 @@
         initTreasuryForm();
         initTransactionsFilter();
         initTreasuryRefresh();
+        initManualAttachments();
     });
 })();

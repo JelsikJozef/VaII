@@ -149,4 +149,58 @@ class ManualRepository
         $stmt = $this->pdo->prepare('DELETE FROM knowledge_articles WHERE id = :id');
         $stmt->execute(['id' => $id]);
     }
+
+    /**
+     * List attachments for the given article.
+     */
+    public function listAttachments(int $articleId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, article_id, file_path, url, description, created_at FROM attachments WHERE article_id = :id ORDER BY created_at DESC'
+        );
+        $stmt->execute(['id' => $articleId]);
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Insert a new attachment and return its id.
+     */
+    public function addAttachment(int $articleId, string $filePath, ?string $description = null): int
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO attachments (article_id, file_path, description) VALUES (:article_id, :file_path, :description)'
+        );
+        $stmt->execute([
+            'article_id' => $articleId,
+            'file_path' => $filePath,
+            'description' => $description,
+        ]);
+
+        return (int)$this->pdo->lastInsertId();
+    }
+
+    /**
+     * Find single attachment by id.
+     */
+    public function findAttachmentById(int $attId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, article_id, file_path, url, description FROM attachments WHERE id = :id'
+        );
+        $stmt->execute(['id' => $attId]);
+        $row = $stmt->fetch();
+
+        return $row === false ? null : $row;
+    }
+
+    /**
+     * Delete attachment by id.
+     */
+    public function deleteAttachment(int $attId): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM attachments WHERE id = :id');
+        $stmt->execute(['id' => $attId]);
+    }
 }
