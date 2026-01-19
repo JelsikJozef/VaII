@@ -879,3 +879,17 @@
     });
  })();
 
+// AI-GENERATED: Friendly timestamp formatter for activity feed (GitHub Copilot / ChatGPT), 2026-01-19
+(function formatActivityTimes() {
+    var nodes = document.querySelectorAll('.js-iso-time');
+    if (!nodes.length || typeof Intl === 'undefined' || !Intl.DateTimeFormat) return;
+    var formatter = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    nodes.forEach(function (el) {
+        var iso = el.textContent && el.textContent.trim();
+        if (!iso) return;
+        var date = new Date(iso);
+        if (!isNaN(date.getTime())) {
+            el.textContent = formatter.format(date);
+        }
+    });
+})();
