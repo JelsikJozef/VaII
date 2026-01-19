@@ -61,11 +61,16 @@ class AuthController extends BaseController
      */
     public function loginForm(Request $request): Response
     {
+        $session = $this->app->getSession();
+        $success = $session->get('auth.success');
+        $session->remove('auth.success');
+
         return $this->html([
             'activeModule' => 'auth',
             'errors' => [],
             'email' => '',
             'genericError' => null,
+            'successMessage' => $success,
         ], 'login');
     }
 
@@ -101,6 +106,7 @@ class AuthController extends BaseController
                 'errors' => $errors,
                 'email' => $email,
                 'genericError' => null,
+                'successMessage' => null,
             ], 'login');
         }
 
@@ -112,7 +118,8 @@ class AuthController extends BaseController
                 'activeModule' => 'auth',
                 'errors' => [],
                 'email' => $email,
-                'genericError' => 'Invalid credentials.',
+                'genericError' => 'Invalid credentials or awaiting approval.',
+                'successMessage' => null,
             ], 'login');
         }
 
@@ -130,6 +137,90 @@ class AuthController extends BaseController
     public function logout(Request $request): Response
     {
         $this->app->getAuthenticator()?->logout();
+        return $this->redirect($this->url('Auth.loginForm'));
+    }
+
+    /**
+     * Displays the registration form.
+     *
+     * This action renders the registration view, including any error messages and previously entered data.
+     *
+     * @return Response The response object that renders the registration form view.
+     */
+    public function registerForm(Request $request): Response
+    {
+        return $this->html([
+            'activeModule' => 'auth',
+            'errors' => [],
+            'name' => '',
+            'email' => '',
+        ], 'register');
+    }
+
+    /**
+     * Processes the registration request.
+     *
+     * This action handles user registration attempts. It validates the provided data, and if valid, creates a new
+     * pending user account. The user is then redirected to the login page with a success message. Otherwise, the
+     * registration form is re-rendered with error messages.
+     *
+     * @return Response The response object which can either redirect on success or render the registration view with
+     *                  error messages on failure.
+     */
+    public function register(Request $request): Response
+    {
+        $name = trim((string)($request->post('name') ?? ''));
+        $email = trim((string)($request->post('email') ?? ''));
+        $password = (string)($request->post('password') ?? '');
+        $passwordConfirm = (string)($request->post('password_confirm') ?? '');
+
+        $errors = [];
+        if ($name === '') {
+            $errors['name'][] = 'Name is required.';
+        } elseif (mb_strlen($name) < 2) {
+            $errors['name'][] = 'Name must be at least 2 characters.';
+        } elseif (mb_strlen($name) > 255) {
+            $errors['name'][] = 'Name must be at most 255 characters.';
+        }
+
+        if ($email === '') {
+            $errors['email'][] = 'Email is required.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors['email'][] = 'Email is not valid.';
+        } elseif (mb_strlen($email) > 255) {
+            $errors['email'][] = 'Email must be at most 255 characters.';
+        } elseif ((new \App\Repositories\UserRepository())->emailExists($email)) {
+            $errors['email'][] = 'Email is already in use.';
+        }
+
+        if ($password === '') {
+            $errors['password'][] = 'Password is required.';
+        } elseif (strlen($password) < 8) {
+            $errors['password'][] = 'Password must be at least 8 characters.';
+        }
+
+        if ($passwordConfirm === '') {
+            $errors['password_confirm'][] = 'Please confirm the password.';
+        } elseif ($password !== $passwordConfirm) {
+            $errors['password_confirm'][] = 'Passwords do not match.';
+        }
+
+        if (!empty($errors)) {
+            return $this->html([
+                'activeModule' => 'auth',
+                'errors' => $errors,
+                'name' => $name,
+                'email' => $email,
+                'successMessage' => null,
+            ], 'register');
+        }
+
+        $repo = new \App\Repositories\UserRepository();
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $repo->createPendingUser($name, $email, $hash);
+
+        $this->app->getSession()->set('auth.success', 'Registration submitted. Wait for admin approval.');
+
         return $this->redirect($this->url('Auth.loginForm'));
     }
 }

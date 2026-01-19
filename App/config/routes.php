@@ -31,6 +31,8 @@ return [
         '/polls/delete/{id}' => 'Polls@delete',
         '/profile' => 'Profile@index',
         '/profile/edit' => 'Profile@edit',
+        '/register' => 'Auth@registerForm',
+        '/admin/registrations' => 'AdminRegistrations@index',
     ],
     'POST' => [
         '/login' => 'Auth@login',
@@ -48,5 +50,9 @@ return [
         '/polls/delete/{id}' => 'Polls@delete',
         '/profile/update' => 'Profile@update',
         '/profile/password' => 'Profile@changePassword',
+        '/register' => 'Auth@register',
+        '/admin/registrations/{id}/approve' => 'AdminRegistrations@approve',
+        '/admin/registrations/{id}/reject' => 'AdminRegistrations@reject',
+        '/admin/registrations/{id}/role' => 'AdminRegistrations@setRole',
     ],
 ];

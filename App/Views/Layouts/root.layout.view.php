@@ -87,12 +87,20 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
                     <li class="nav-item">
                         <span class="nav-link disabled"><?= htmlspecialchars((string)($user->getName() ?? $user->getEmail()), ENT_QUOTES) ?></span>
                     </li>
+                    <?php if ($user?->getRole() === 'admin'): ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?= $activeModule === 'admin' ? 'active' : '' ?>" href="<?= $link->url('AdminRegistrations.index') ?>">Admin: Registrations</a>
+                        </li>
+                    <?php endif; ?>
                     <li class="nav-item">
                         <a class="nav-link" href="<?= $link->url('Auth.logout') ?>">Logout</a>
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
                         <a class="nav-link <?= $activeModule === 'auth' ? 'active' : '' ?>" href="<?= $link->url('Auth.loginForm') ?>">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?= $activeModule === 'auth' ? 'active' : '' ?>" href="<?= $link->url('Auth.registerForm') ?>">Register</a>
                     </li>
                 <?php endif; ?>
             </ul>

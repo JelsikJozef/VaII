@@ -2,6 +2,7 @@
 // AI-GENERATED: Login form view with validation messages (GitHub Copilot / ChatGPT), 2026-01-18
 
 /** @var string|null $message */
+/** @var string|null $successMessage */
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var \Framework\Support\View $view */
 
@@ -16,6 +17,11 @@ $view->setLayout('auth');
             <?php if (!empty($genericError)): ?>
                 <div class="alert alert-danger" role="alert">
                     <?= htmlspecialchars((string)$genericError, ENT_QUOTES) ?>
+                </div>
+            <?php endif; ?>
+            <?php if (!empty($successMessage)): ?>
+                <div class="alert alert-success" role="alert">
+                    <?= htmlspecialchars((string)$successMessage, ENT_QUOTES) ?>
                 </div>
             <?php endif; ?>
 
@@ -42,6 +48,7 @@ $view->setLayout('auth');
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Login</button>
+                <a class="btn btn-link" href="<?= $link->url('Auth.registerForm') ?>">Register</a>
             </form>
         </div>
     </div>

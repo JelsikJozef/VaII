@@ -32,6 +32,9 @@ class DbAuthenticator extends SessionAuthenticator
         }
 
         $roleName = (string)($user['role_name'] ?? $user['role'] ?? '');
+        if (strtolower($roleName) === 'pending') {
+            return null;
+        }
         if ($roleName === '') {
             $roleName = 'member';
         }

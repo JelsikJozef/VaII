@@ -17,7 +17,7 @@ class UserIdentity implements IIdentity
         $this->id = $id;
         $this->name = $name;
         $this->email = $email;
-        $this->role = $role;
+        $this->role = strtolower($role);
     }
 
     public function getId(): int

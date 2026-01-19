@@ -800,6 +800,67 @@
          }
      }
 
+    function initRegisterForm() {
+        const form = document.getElementById('auth-register')?.querySelector('form');
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener('submit', function (event) {
+            let valid = true;
+            const name = form.querySelector('#name');
+            const email = form.querySelector('#email');
+            const password = form.querySelector('#password');
+            const confirm = form.querySelector('#password_confirm');
+
+            const emailPattern = /.+@.+\..+/;
+
+            if (name) {
+                const value = (name.value || '').trim();
+                if (value.length < 2 || value.length > 255) {
+                    name.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    name.classList.remove('is-invalid');
+                }
+            }
+
+            if (email) {
+                const value = (email.value || '').trim();
+                if (!value || value.length > 255 || !emailPattern.test(value)) {
+                    email.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    email.classList.remove('is-invalid');
+                }
+            }
+
+            if (password) {
+                if ((password.value || '').length < 8) {
+                    password.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    password.classList.remove('is-invalid');
+                }
+            }
+
+            if (confirm) {
+                if ((confirm.value || '').length < 8 || confirm.value !== (password ? password.value : '')) {
+                    confirm.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    confirm.classList.remove('is-invalid');
+                }
+            }
+
+            if (!valid) {
+                event.preventDefault();
+                event.stopPropagation();
+                form.classList.add('was-validated');
+            }
+        });
+    }
+
     /**
      * Entrypoint: once the DOM is ready we attach all behaviour needed for
      * the Treasury-related pages. Each initializer is defensive and will
@@ -814,7 +875,7 @@
         initManualAttachments();
         initTransactionStatusActions();
         initProfileForms();
+        initRegisterForm();
     });
-})();
-
+ })();
 

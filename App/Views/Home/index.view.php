@@ -9,7 +9,7 @@
 
     <div class="row g-3">
         <div class="col-12 col-md-6 col-lg-3">
-            <a href="<?= $link->url(['Treasury', 'index']) ?>" class="text-decoration-none text-reset">
+            <a href="<?= $link->url('Treasury.index') ?>" class="text-decoration-none text-reset">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Treasury</h5>
@@ -22,7 +22,7 @@
         </div>
 
         <div class="col-12 col-md-6 col-lg-3">
-            <a href="/esncards" class="text-decoration-none text-reset">
+            <a href="<?= $link->url('Esncards.index') ?>" class="text-decoration-none text-reset">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">ESNcards</h5>
@@ -35,7 +35,7 @@
         </div>
 
         <div class="col-12 col-md-6 col-lg-3">
-            <a href="<?= $link->url(['Manual', 'index']) ?>" class="text-decoration-none text-reset">
+            <a href="<?= $link->url('Manual.index') ?>" class="text-decoration-none text-reset">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Semester Manual</h5>
@@ -48,7 +48,7 @@
         </div>
 
         <div class="col-12 col-md-6 col-lg-3">
-            <a href="<?= $link->url(['Profile', 'index']) ?>" class="text-decoration-none text-reset">
+            <a href="<?= $link->url('Polls.index') ?>" class="text-decoration-none text-reset">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Polls</h5>
@@ -59,5 +59,33 @@
                 </div>
             </a>
         </div>
+
+        <?php if (!$user?->isLoggedIn()): ?>
+        <div class="col-12 col-md-6 col-lg-3">
+            <a href="<?= $link->url('Auth.registerForm') ?>" class="text-decoration-none text-reset">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Register</h5>
+                        <p class="card-text mb-0">
+                            Create your account (admin approval required).
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <?php elseif ($user?->getRole() === 'admin'): ?>
+        <div class="col-12 col-md-6 col-lg-3">
+            <a href="<?= $link->url('AdminRegistrations.index') ?>" class="text-decoration-none text-reset">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Admin: Registrations</h5>
+                        <p class="card-text mb-0">
+                            Review and approve pending users.
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <?php endif; ?>
     </div>
 </div>

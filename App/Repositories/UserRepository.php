@@ -10,6 +10,8 @@ class UserRepository
 {
     private PDO $pdo;
 
+    private const PENDING_ROLE = 'pending';
+
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?? Database::getConnection();
@@ -30,6 +32,13 @@ class UserRepository
         return $row === false ? null : $row;
     }
 
+    public function emailExists(string $email): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT 1 FROM users WHERE email = :email LIMIT 1');
+        $stmt->execute(['email' => $email]);
+        return $stmt->fetchColumn() !== false;
+    }
+
     public function findById(int $id): ?array
     {
         $sql = 'SELECT u.id, u.name, u.email, u.password_hash, r.name AS role_name
@@ -45,36 +54,71 @@ class UserRepository
         return $row === false ? null : $row;
     }
 
-    public function updateProfile(int $id, string $name, string $email): void
+    public function createPendingUser(string $name, string $email, string $passwordHash): int
     {
-        $sql = 'UPDATE users SET name = :name, email = :email WHERE id = :id';
-        $stmt = $this->pdo->prepare($sql);
+        $pendingRoleId = $this->ensureRole(self::PENDING_ROLE);
+        $stmt = $this->pdo->prepare('INSERT INTO users (name, email, password_hash, role_id) VALUES (:name, :email, :hash, :role_id)');
         $stmt->execute([
             'name' => $name,
             'email' => $email,
-            'id' => $id,
-        ]);
-    }
-
-    public function updatePasswordHash(int $id, string $passwordHash): void
-    {
-        $sql = 'UPDATE users SET password_hash = :hash WHERE id = :id';
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
             'hash' => $passwordHash,
-            'id' => $id,
+            'role_id' => $pendingRoleId,
         ]);
+
+        return (int)$this->pdo->lastInsertId();
     }
 
-    public function emailExistsForOtherUser(string $email, int $userId): bool
+    public function findPendingUsers(): array
     {
-        $sql = 'SELECT 1 FROM users WHERE email = :email AND id <> :id LIMIT 1';
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            'email' => $email,
-            'id' => $userId,
-        ]);
+        $pendingRoleId = $this->ensureRole(self::PENDING_ROLE);
+        $stmt = $this->pdo->prepare('SELECT u.id, u.name, u.email, u.created_at FROM users u WHERE u.role_id = :role_id ORDER BY u.created_at ASC');
+        $stmt->execute(['role_id' => $pendingRoleId]);
+        return $stmt->fetchAll();
+    }
 
-        return $stmt->fetchColumn() !== false;
+    public function approveUser(int $id, int $roleId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET role_id = :role_id WHERE id = :id');
+        $stmt->execute(['role_id' => $roleId, 'id' => $id]);
+    }
+
+    public function rejectUser(int $id): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM users WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+    }
+
+    public function setRole(int $id, int $roleId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET role_id = :role_id WHERE id = :id');
+        $stmt->execute(['role_id' => $roleId, 'id' => $id]);
+    }
+
+    public function listRoles(bool $includePending = false): array
+    {
+        $sql = 'SELECT id, name FROM roles';
+        if (!$includePending) {
+            $sql .= ' WHERE name <> :pending';
+        }
+        $sql .= ' ORDER BY name ASC';
+
+        $stmt = $this->pdo->prepare($sql);
+        $params = $includePending ? [] : ['pending' => self::PENDING_ROLE];
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    private function ensureRole(string $roleName): int
+    {
+        $select = $this->pdo->prepare('SELECT id FROM roles WHERE name = :name LIMIT 1');
+        $select->execute(['name' => $roleName]);
+        $found = $select->fetchColumn();
+        if ($found !== false) {
+            return (int)$found;
+        }
+
+        $insert = $this->pdo->prepare('INSERT INTO roles (name) VALUES (:name)');
+        $insert->execute(['name' => $roleName]);
+        return (int)$this->pdo->lastInsertId();
     }
 }
