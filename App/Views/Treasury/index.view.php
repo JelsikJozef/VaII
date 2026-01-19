@@ -102,7 +102,7 @@ $typeMap = [
                     $title = trim((string)($tx['title'] ?? $tx['description'] ?? 'Untitled transaction'));
                     $proposedBy = trim((string)($tx['created_by'] ?? ''));
                     $proposedBy = $proposedBy !== '' ? 'User #' . $proposedBy : 'Unspecified member';
-                    $createdAt = $tx['created_at'] ?? '';
+                    $createdAt = $formatDateTime($tx['created_at'] ?? null);
                     $editUrl = $link->url('Treasury.edit', ['id' => $tx['id'] ?? 0]);
                     $deleteUrl = $link->url('Treasury.delete', ['id' => $tx['id'] ?? 0]);
                 ?>

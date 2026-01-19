@@ -30,11 +30,12 @@ $statusClasses = [
     <?php else: ?>
         <div class="list-group">
             <?php foreach ($polls as $poll):
-                $pollId = (int)($poll['id'] ?? 0);
-                $isActive = (int)($poll['is_active'] ?? 0) === 1;
-                $badgeClass = $statusClasses[$isActive ? 1 : 0] ?? 'bg-light text-body border-secondary-subtle';
-                $question = (string)($poll['question'] ?? '');
-                $createdAt = (string)($poll['created_at'] ?? '');
+                 $pollId = (int)($poll['id'] ?? 0);
+                 $isActive = (int)($poll['is_active'] ?? 0) === 1;
+                 $badgeClass = $statusClasses[$isActive ? 1 : 0] ?? 'bg-light text-body border-secondary-subtle';
+                 $question = (string)($poll['question'] ?? '');
+                // AI-GENERATED: Unified poll timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
+                 $createdAt = $formatDateTime($poll['created_at'] ?? null);
             ?>
             <div class="list-group-item d-flex justify-content-between align-items-start">
                 <div>

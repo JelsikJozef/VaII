@@ -78,18 +78,20 @@ $statusBadge = static function (string $value): array {
                 </thead>
                 <tbody>
                 <?php foreach ($esncards as $card):
-                    $badge = $statusBadge((string)($card['status'] ?? 'available'));
-                    $id = (int)($card['id'] ?? 0);
-                    $editUrl = $link->url('Esncards.edit', ['id' => $id]);
-                    $deleteUrl = $link->url('Esncards.delete', ['id' => $id]);
+                     $badge = $statusBadge((string)($card['status'] ?? 'available'));
+                     $id = (int)($card['id'] ?? 0);
+                     $editUrl = $link->url('Esncards.edit', ['id' => $id]);
+                     $deleteUrl = $link->url('Esncards.delete', ['id' => $id]);
+                     // AI-GENERATED: Unified ESNcard assignment timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
+                     $assignedAt = $formatDateTime($card['assigned_at'] ?? null);
                 ?>
-                    <tr>
-                        <td><?= htmlspecialchars((string)($card['card_number'] ?? ''), ENT_QUOTES) ?></td>
-                        <td><span class="<?= $badge[1] ?>"><?= htmlspecialchars($badge[0], ENT_QUOTES) ?></span></td>
-                        <td><?= htmlspecialchars((string)($card['assigned_to_name'] ?? ''), ENT_QUOTES) ?></td>
-                        <td><?= htmlspecialchars((string)($card['assigned_to_email'] ?? ''), ENT_QUOTES) ?></td>
-                        <td><?= htmlspecialchars((string)($card['assigned_at'] ?? ''), ENT_QUOTES) ?></td>
-                        <?php if ($canManage): ?>
+                     <tr>
+                         <td><?= htmlspecialchars((string)($card['card_number'] ?? ''), ENT_QUOTES) ?></td>
+                         <td><span class="<?= $badge[1] ?>"><?= htmlspecialchars($badge[0], ENT_QUOTES) ?></span></td>
+                         <td><?= htmlspecialchars((string)($card['assigned_to_name'] ?? ''), ENT_QUOTES) ?></td>
+                         <td><?= htmlspecialchars((string)($card['assigned_to_email'] ?? ''), ENT_QUOTES) ?></td>
+                         <td><?= htmlspecialchars($assignedAt, ENT_QUOTES) ?></td>
+                         <?php if ($canManage): ?>
                             <td class="text-end">
                                 <a href="<?= $editUrl ?>" class="btn btn-sm btn-outline-primary me-1">Edit</a>
                                 <form method="post" action="<?= $deleteUrl ?>" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this card?');">

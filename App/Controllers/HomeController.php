@@ -5,7 +5,6 @@ namespace App\Controllers;
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
-use App\Repositories\ActivityRepository;
 use App\Repositories\NewsRepository;
 
 /**
@@ -41,45 +40,11 @@ class HomeController extends BaseController
      */
     public function index(Request $request): Response
     {
-        $activities = [];
-        try {
-            $activities = (new ActivityRepository())->latest(10);
-        } catch (\Throwable) {
-            $activities = [];
-        }
-
-        if (empty($activities)) {
-            $legacy = (new NewsRepository())->latest(10);
-            $activities = array_map(static function (array $item): array {
-                $meta = is_array($item['meta'] ?? null) ? $item['meta'] : [];
-
-                $actorName = $meta['actor_name'] ?? $meta['name'] ?? null;
-                $actorEmail = $meta['actor_email'] ?? $meta['email'] ?? null;
-                $detailsParts = [];
-                foreach ($meta as $key => $value) {
-                    if (in_array($key, ['actor_name', 'name', 'actor_email', 'email'], true)) {
-                        continue;
-                    }
-                    if (is_scalar($value)) {
-                        $detailsParts[] = $key . ': ' . (string)$value;
-                    }
-                }
-                $details = $detailsParts !== [] ? implode(', ', $detailsParts) : null;
-
-                return [
-                    'title' => (string)($item['message'] ?? ''),
-                    'details' => $details,
-                    'action' => (string)($item['type'] ?? 'activity'),
-                    'actor_name' => $actorName,
-                    'actor_email' => $actorEmail,
-                    'created_at' => (string)($item['ts'] ?? ''),
-                ];
-            }, $legacy);
-        }
+        $news = (new NewsRepository())->latest(10);
 
         return $this->html([
             'activeModule' => 'home',
-            'activities' => $activities,
+            'news' => $news,
         ]);
     }
 

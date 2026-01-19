@@ -7,8 +7,8 @@
 <div class="container-lg esn-page">
     <header class="esn-page-header">
         <div class="esn-kicker">DASHBOARD</div>
-        <h1 class="esn-title">Modules</h1>
-        <p class="esn-subtitle">Welcome to ESN UNIZA section system</p>
+        <h1 class="esn-title">Welcome to ESN UNIZA section system</h1>
+        <p class="esn-subtitle">Where would you like to procced ?</p>
     </header>
 
     <div class="row g-4 align-items-start">
@@ -84,53 +84,38 @@
                     <a href="#" class="esn-activity-link">View all</a>
                 </div>
                 <div class="activity-list" role="list">
-                    <?php $items = $activities ?? []; ?>
-                    <?php if (!empty($items)): ?>
-                        <?php foreach ($items as $item): ?>
+                    <?php if (!empty($news)): ?>
+                        <?php foreach ($news as $item): ?>
                             <?php
-                                $actionValue = (string)($item['action'] ?? '');
-                                $actionLower = strtolower($actionValue);
+                                $typeValue = (string)($item['type'] ?? '');
+                                $typeLower = strtolower($typeValue);
                                 $dotClass = 'activity-dot';
-                                if (str_contains($actionLower, 'assign')) {
+                                if (str_contains($typeLower, 'assign')) {
                                     $dotClass .= ' activity-dot--success';
-                                } elseif (str_contains($actionLower, 'delete')) {
+                                } elseif (str_contains($typeLower, 'delete')) {
                                     $dotClass .= ' activity-dot--danger';
-                                } elseif (str_contains($actionLower, 'status') || str_contains($actionLower, 'update')) {
+                                } elseif (str_contains($typeLower, 'status') || str_contains($typeLower, 'update')) {
                                     $dotClass .= ' activity-dot--warning';
                                 } else {
                                     $dotClass .= ' activity-dot--info';
                                 }
-
-                                $actorLabel = trim((string)($item['actor_name'] ?? ''));
-                                if ($actorLabel === '') {
-                                    $actorLabel = trim((string)($item['actor_email'] ?? ''));
-                                }
-                                if ($actorLabel === '') {
-                                    $actorLabel = 'System';
-                                }
+                                // AI-GENERATED: Unified activity timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
+                                $timestamp = $formatDateTime($item['ts'] ?? null);
                             ?>
-                            <article class="activity-item" data-type="<?= htmlspecialchars($actionValue, ENT_QUOTES) ?>" role="listitem">
+                            <article class="activity-item" data-type="<?= htmlspecialchars($typeValue, ENT_QUOTES) ?>" role="listitem">
                                 <span class="<?= $dotClass ?>" aria-hidden="true"><span class="activity-dot__inner"></span></span>
                                 <div class="activity-body">
                                     <div class="activity-title">
-                                        <?= htmlspecialchars((string)($item['title'] ?? ''), ENT_QUOTES) ?>
+                                        <?= htmlspecialchars((string)($item['message'] ?? ''), ENT_QUOTES) ?>
                                     </div>
                                     <div class="activity-meta">
-                                        <span class="activity-chip"><?= htmlspecialchars($actionValue !== '' ? $actionValue : 'activity', ENT_QUOTES) ?></span>
+                                        <span class="activity-chip"><?= htmlspecialchars($typeValue !== '' ? $typeValue : 'ACTIVITY', ENT_QUOTES) ?></span>
                                         <span class="esn-activity-separator" aria-hidden="true">•</span>
-                                        <span class="activity-time js-iso-time"><?= htmlspecialchars((string)($item['created_at'] ?? ''), ENT_QUOTES) ?></span>
-                                        <span class="esn-activity-separator" aria-hidden="true">•</span>
-                                        <span class="activity-time">by <?= htmlspecialchars($actorLabel, ENT_QUOTES) ?></span>
+                                        <span class="activity-time js-iso-time"><?= htmlspecialchars($timestamp, ENT_QUOTES) ?></span>
                                     </div>
-                                    <?php $details = trim((string)($item['details'] ?? '')); ?>
-                                    <?php if ($details !== ''): ?>
-                                        <div class="activity-meta text-muted" aria-label="Details">
-                                            <?= htmlspecialchars($details, ENT_QUOTES) ?>
-                                        </div>
-                                    <?php endif; ?>
-                                 </div>
-                             </article>
-                         <?php endforeach; ?>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
                     <?php else: ?>
                         <div class="activity-empty" role="listitem">
                             <span class="activity-dot activity-dot--info" aria-hidden="true"><span class="activity-dot__inner"></span></span>

@@ -46,7 +46,7 @@ $roles = $roles ?? [];
                     <tr>
                         <td><?= htmlspecialchars((string)($user['name'] ?? ''), ENT_QUOTES) ?></td>
                         <td><?= htmlspecialchars((string)($user['email'] ?? ''), ENT_QUOTES) ?></td>
-                        <td><?= htmlspecialchars((string)($user['created_at'] ?? ''), ENT_QUOTES) ?></td>
+                        <td><?= htmlspecialchars($formatDateTime($user['created_at'] ?? null), ENT_QUOTES) ?></td>
                         <td>
                             <form class="d-flex gap-2" method="post" action="<?= $link->url('AdminRegistrations.setRole', ['id' => $user['id'] ?? 0]) ?>">
                                 <input type="hidden" name="id" value="<?= htmlspecialchars((string)($user['id'] ?? ''), ENT_QUOTES) ?>">

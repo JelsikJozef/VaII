@@ -18,8 +18,9 @@ $title = (string)($article['title'] ?? 'Untitled');
 $category = (string)($article['category'] ?? '');
 $difficulty = (string)($article['difficulty'] ?? '');
 $content = (string)($article['content'] ?? '');
-$createdAt = (string)($article['created_at'] ?? '');
-$updatedAt = (string)($article['updated_at'] ?? '');
+// AI-GENERATED: Unified manual detail timestamps (GitHub Copilot / ChatGPT), 2026-01-20
+$createdAt = $formatDateTime($article['created_at'] ?? null);
+$updatedAt = $formatDateTime($article['updated_at'] ?? null);
 $articleId = (int)($article['id'] ?? 0);
 
 $difficultyLabels = [
@@ -37,7 +38,7 @@ $difficultyLabels = [
             <h1 class="h3 mb-0"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
             <div class="text-muted small">
                 Created <?= htmlspecialchars($createdAt, ENT_QUOTES) ?>
-                <?php if ($updatedAt !== '' && $updatedAt !== $createdAt): ?>
+                <?php if ($updatedAt !== '—' && $updatedAt !== $createdAt): ?>
                     · Updated <?= htmlspecialchars($updatedAt, ENT_QUOTES) ?>
                 <?php endif; ?>
             </div>

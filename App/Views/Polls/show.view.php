@@ -30,6 +30,8 @@ $statusClasses = [
     1 => 'bg-success-subtle text-success border-success-subtle',
     0 => 'bg-danger-subtle text-danger border-danger-subtle',
 ];
+// AI-GENERATED: Unified poll detail timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
+$createdAt = $formatDateTime($poll['created_at'] ?? null);
 ?>
 
 <div class="container mt-4">
@@ -41,7 +43,7 @@ $statusClasses = [
                     <?= $status === 1 ? 'Open' : 'Closed' ?>
                 </span>
             </div>
-            <div class="small text-muted">Created at <?= htmlspecialchars((string)($poll['created_at'] ?? ''), ENT_QUOTES) ?></div>
+            <div class="small text-muted">Created at <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
         </div>
         <a href="<?= $link->url('Polls.index') ?>" class="btn btn-outline-secondary">Back</a>
     </div>

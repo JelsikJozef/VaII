@@ -90,11 +90,11 @@ $difficultyLabels = [
                 </thead>
                 <tbody>
                 <?php foreach ($articles as $article):
-                    $id = (int)($article['id'] ?? 0);
-                    $title = (string)($article['title'] ?? 'Untitled');
-                    $cat = (string)($article['category'] ?? '');
-                    $diff = (string)($article['difficulty'] ?? '');
-                    $createdAt = (string)($article['created_at'] ?? '');
+                     $id = (int)($article['id'] ?? 0);
+                     $title = (string)($article['title'] ?? 'Untitled');
+                     $cat = (string)($article['category'] ?? '');
+                     $diff = (string)($article['difficulty'] ?? '');
+                     $createdAt = $formatDateTime($article['created_at'] ?? null);
                 ?>
                     <tr>
                         <td>

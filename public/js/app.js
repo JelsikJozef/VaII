@@ -364,7 +364,7 @@
                 <h3 class="treasury-card__title">${(tx.title || tx.description || 'Untitled transaction')}</h3>
                 <p class="treasury-card__meta">Proposed by ${(tx.proposed_by || 'Unspecified member')}</p>
                 <footer class="treasury-card__footer">
-                    <span class="treasury-card__date">${tx.created_at || ''}</span>
+                    <span class="treasury-card__date">${formatDateTimeClient(tx.created_at)}</span>
                     <span class="treasury-status ${statusData.className}">${statusData.label}</span>
                 </footer>
             `;
@@ -467,6 +467,23 @@
             return kb.toFixed(1) + ' KB';
         }
         return (kb / 1024).toFixed(2) + ' MB';
+    }
+
+    // AI-GENERATED: Client-side fallback date formatter (GitHub Copilot / ChatGPT), 2026-01-20
+    function formatDateTimeClient(value) {
+        if (value === null || value === undefined || String(value).trim() === '') {
+            return '—';
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return String(value);
+        }
+        const day = String(date.getDate());
+        const month = String(date.getMonth() + 1);
+        const year = String(date.getFullYear());
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return day + '. ' + month + '. ' + year + ', ' + hours + ':' + minutes;
     }
 
     /**
@@ -879,17 +896,40 @@
     });
  })();
 
-// AI-GENERATED: Friendly timestamp formatter for activity feed (GitHub Copilot / ChatGPT), 2026-01-19
+// AI-GENERATED: Match server-side activity timestamp format (GitHub Copilot / ChatGPT), 2026-01-20
 (function formatActivityTimes() {
     var nodes = document.querySelectorAll('.js-iso-time');
     if (!nodes.length || typeof Intl === 'undefined' || !Intl.DateTimeFormat) return;
-    var formatter = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    var formatter = new Intl.DateTimeFormat(undefined, {
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
     nodes.forEach(function (el) {
-        var iso = el.textContent && el.textContent.trim();
-        if (!iso) return;
-        var date = new Date(iso);
-        if (!isNaN(date.getTime())) {
-            el.textContent = formatter.format(date);
+        var raw = el.textContent && el.textContent.trim();
+        if (!raw) return;
+        var date = new Date(raw);
+        if (isNaN(date.getTime())) return;
+        var formatted = formatter.format(date);
+        // Ensure format: d. m. Y, HH:MM (strip locale commas, normalize separators)
+        formatted = formatted.replace(/\s*,\s*/g, ' ');
+        var parts = formatted.split(/[\.\/]\s*/).join('. ').replace(/\s+/g, ' ').trim();
+        // If DateTimeFormat already yields expected style, prefer it; otherwise fallback to manual compose
+        if (/^\d{1,2}\.\s\d{1,2}\.\s\d{4}\s\d{2}:\d{2}$/.test(parts)) {
+            el.textContent = parts.replace(' ', ', ');
+            return;
         }
+        var day = String(date.getDate());
+        var month = String(date.getMonth() + 1);
+        var year = String(date.getFullYear());
+        var hours = String(date.getHours()).padStart(2, '0');
+        var minutes = String(date.getMinutes()).padStart(2, '0');
+        el.textContent = day + '. ' + month + '. ' + year + ', ' + hours + ':' + minutes;
     });
 })();
+
+
+
