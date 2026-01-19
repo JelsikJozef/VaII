@@ -6,15 +6,18 @@ namespace App\Controllers;
 require_once __DIR__ . '/../../Framework/ClassLoader.php';
 
 use App\Repositories\EsncardRepository;
+use App\Repositories\NewsRepository;
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
 use Framework\Http\Session;
+use App\Services\NewsService;
 
 class EsncardsController extends BaseController
 {
     private ?EsncardRepository $repository = null;
     private ?Session $flashSession = null;
+    private ?NewsRepository $news = null;
 
     public function authorize(Request $request, string $action): bool
     {
@@ -79,6 +82,13 @@ class EsncardsController extends BaseController
         }
 
         $this->repo()->create($normalized);
+        if ($normalized['status'] === 'assigned') {
+            $this->news()->log('esncard.assigned', 'ESNcard assigned', [
+                'card' => $normalized['card_number'] ?? null,
+                'name' => $normalized['assigned_to_name'] ?? null,
+                'email' => $normalized['assigned_to_email'] ?? null,
+            ]);
+        }
         $this->flash('esncards.success', 'Card created successfully.');
 
         return $this->redirect($this->url('Esncards.index'));
@@ -141,6 +151,14 @@ class EsncardsController extends BaseController
         }
 
         $this->repo()->update($id, $normalized);
+        if ($normalized['status'] === 'assigned') {
+            $this->news()->log('esncard.assigned', 'ESNcard assigned', [
+                'id' => $id,
+                'card' => $normalized['card_number'] ?? null,
+                'name' => $normalized['assigned_to_name'] ?? null,
+                'email' => $normalized['assigned_to_email'] ?? null,
+            ]);
+        }
         $this->flash('esncards.success', 'Card updated successfully.');
 
         return $this->redirect($this->url('Esncards.index'));
@@ -288,5 +306,13 @@ class EsncardsController extends BaseController
         $this->session()->remove($key);
 
         return $value;
+    }
+
+    private function news(): NewsRepository
+    {
+        if ($this->news === null) {
+            $this->news = new NewsRepository();
+        }
+        return $this->news;
     }
 }

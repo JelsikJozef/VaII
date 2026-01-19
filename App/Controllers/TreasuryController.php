@@ -11,6 +11,7 @@ use Framework\Http\Responses\Response;
 use Framework\Http\Responses\JsonResponse;
 use Framework\Http\Session;
 use App\Repositories\TransactionRepository;
+use App\Repositories\NewsRepository;
 
 /**
  * Controller responsible for managing treasury transactions.
@@ -38,6 +39,9 @@ class TreasuryController extends BaseController
      * Session instance used exclusively for storing and reading flash messages.
      */
     private ?Session $flashSession = null;
+
+    /** @var NewsRepository|null */
+    private ?NewsRepository $news = null;
 
     /**
      * Checks whether the current user is allowed to execute a given action.
@@ -186,7 +190,13 @@ class TreasuryController extends BaseController
         $amount = (float)$amountRaw;
         $cashboxId = $this->repo()->ensureDefaultCashboxId();
         $createdBy = $this->user?->getIdentity()?->getId();
-        $this->repo()->create($cashboxId, $type, $amount, $description, 'pending', $createdBy, null);
+        $txId = $this->repo()->create($cashboxId, $type, $amount, $description, 'pending', $createdBy, null);
+        $this->news()->log('transaction.created', 'New transaction submitted', [
+             'id' => $txId,
+             'type' => $type,
+             'amount' => $amount,
+             'user' => $createdBy,
+         ]);
 
         $this->flash('treasury.success', 'Transaction successfully registered.');
 
@@ -345,6 +355,12 @@ class TreasuryController extends BaseController
         $amount = (float)$amountRaw;
         $this->repo()->update($id, $type, $amount, $description, $status);
 
+        $this->news()->log('transaction.updated', 'Transaction updated', [
+             'id' => $id,
+             'status' => $status,
+             'user' => $this->user?->getIdentity()?->getId(),
+         ]);
+
         $this->flash('treasury.success', 'Transaction updated');
 
         return $this->redirect($this->url('Treasury.index'));
@@ -390,6 +406,10 @@ class TreasuryController extends BaseController
         }
 
         $this->repo()->delete($id);
+        $this->news()->log('transaction.deleted', 'Transaction deleted', [
+             'id' => $id,
+             'user' => $this->user?->getIdentity()?->getId(),
+         ]);
         $this->flash('treasury.success', 'Transaction deleted');
 
         return $this->redirect($this->url('Treasury.index'));
@@ -588,6 +608,12 @@ class TreasuryController extends BaseController
         $approverId = $this->user?->getIdentity()?->getId();
         $this->repo()->setStatus($id, $status, $approverId);
 
+        $this->news()->log('transaction.status', 'Transaction status updated', [
+             'id' => $id,
+             'status' => $status,
+             'user' => $approverId,
+         ]);
+
         return $this->json([
             'ok' => true,
             'id' => $id,
@@ -595,5 +621,13 @@ class TreasuryController extends BaseController
             'balance' => $this->repo()->getBalance(),
             'pending' => $this->repo()->getPendingTotal(),
         ]);
+    }
+
+    private function news(): NewsRepository
+    {
+        if ($this->news === null) {
+            $this->news = new NewsRepository();
+        }
+        return $this->news;
     }
 }

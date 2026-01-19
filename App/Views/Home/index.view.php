@@ -7,6 +7,20 @@
 <div class="container mt-4">
     <h1 class="mb-4">Modules</h1>
 
+    <?php if (!empty($news)): ?>
+    <section class="mb-4">
+        <h2 class="h5">Latest news</h2>
+        <ul class="list-group">
+            <?php foreach ($news as $item): ?>
+                <li class="list-group-item">
+                    <div class="small text-muted mb-1"><?= htmlspecialchars((string)($item['ts'] ?? ''), ENT_QUOTES) ?></div>
+                    <div><?= htmlspecialchars((string)($item['message'] ?? ''), ENT_QUOTES) ?></div>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
+    <?php endif; ?>
+
     <div class="row g-3">
         <div class="col-12 col-md-6 col-lg-3">
             <a href="<?= $link->url('Treasury.index') ?>" class="text-decoration-none text-reset">

@@ -5,6 +5,7 @@ namespace App\Controllers;
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use App\Repositories\NewsRepository;
 
 /**
  * Class HomeController
@@ -39,8 +40,11 @@ class HomeController extends BaseController
      */
     public function index(Request $request): Response
     {
+        $news = (new NewsRepository())->latest(10);
+
         return $this->html([
             'activeModule' => 'home',
+            'news' => $news,
         ]);
     }
 
