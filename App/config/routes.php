@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Add auth routes (GitHub Copilot / ChatGPT), 2026-01-18
+// AI-GENERATED: Add polls module routes (GitHub Copilot / ChatGPT), 2026-01-19
 
 // Jednoduchá definícia rout pre potreby predmetu VAII v štýle VAIICKO.
 // Framework samotný zatiaľ číta c=Controller&a=action z query stringu,
@@ -25,6 +25,10 @@ return [
         '/manual/delete/{id}' => 'Manual@delete',
         '/manual/{id}' => 'Manual@show',
         '/manual/{id}/attachments/delete/{attId}' => 'Manual@deleteAttachment',
+        '/polls' => 'Polls@index',
+        '/polls/new' => 'Polls@new',
+        '/polls/{id}' => 'Polls@show',
+        '/polls/delete/{id}' => 'Polls@delete',
     ],
     'POST' => [
         '/login' => 'Auth@login',
@@ -37,5 +41,8 @@ return [
         '/manual/{id}/attachments/upload' => 'Manual@uploadAttachmentJson',
         '/manual/{id}/attachments/delete/{attId}' => 'Manual@deleteAttachment',
         '/treasury/status/{id}' => 'Treasury@setStatusJson',
+        '/polls/store' => 'Polls@store',
+        '/polls/{id}/vote' => 'Polls@vote',
+        '/polls/delete/{id}' => 'Polls@delete',
     ],
 ];

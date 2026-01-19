@@ -81,7 +81,7 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
                     <a class="nav-link <?= $activeModule === 'profile' ? 'active' : '' ?>" href="/profile">Profile</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= $activeModule === 'polls' ? 'active' : '' ?>" href="/polls">Polls</a>
+                    <a class="nav-link <?= $activeModule === 'polls' ? 'active' : '' ?>" href="<?= $link->url('Polls.index') ?>">Polls</a>
                 </li>
                 <?php if ($user?->isLoggedIn()): ?>
                     <li class="nav-item">
