@@ -36,5 +36,6 @@ return [
         '/manual/update/{id}' => 'Manual@update',
         '/manual/{id}/attachments/upload' => 'Manual@uploadAttachmentJson',
         '/manual/{id}/attachments/delete/{attId}' => 'Manual@deleteAttachment',
+        '/treasury/status/{id}' => 'Treasury@setStatusJson',
     ],
 ];

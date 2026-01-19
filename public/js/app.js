@@ -6,6 +6,7 @@
 (function () {
     'use strict';
 
+
     /**
      * Display a success flash message if the backend stored one in the layout.
      *
@@ -587,6 +588,127 @@
     }
 
     /**
+     * Initialize AJAX-based transaction status actions on the Treasury index page.
+     *
+     * Responsibilities:
+     *  - Handle clicks on "Approve" and "Reject" buttons for transactions.
+     *  - Send the new status to the server via AJAX.
+     *  - Update the transaction card to reflect the new status.
+     *  - Remove the action buttons after approval/rejection to prevent duplicates.
+     */
+    function initTransactionStatusActions() {
+        const anyButton = document.querySelector('.js-tx-approve, .js-tx-reject');
+        if (!anyButton) {
+            return;
+        }
+
+        function setBusy(buttons, busy) {
+            buttons.forEach(function (btn) {
+                if (!btn) return;
+                btn.disabled = busy;
+                btn.classList.toggle('disabled', busy);
+            });
+        }
+
+        function updateHeroBalances(balance, pending) {
+            const approvedEl = document.getElementById('treasury-balance-approved');
+            const pendingEl = document.getElementById('treasury-balance-pending');
+            if (approvedEl && typeof balance === 'number') {
+                approvedEl.textContent = balance.toFixed(2).replace('.', ',') + ' €';
+            }
+            if (pendingEl && typeof pending === 'number') {
+                pendingEl.textContent = pending.toFixed(2).replace('.', ',') + ' €';
+            }
+        }
+
+        function updateBadge(id, status) {
+            const badge = document.querySelector('.js-tx-status[data-id="' + id + '"]');
+            if (!badge) return;
+
+            badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            badge.classList.remove('treasury-status--pending', 'treasury-status--approved', 'treasury-status--rejected');
+            badge.classList.add('treasury-status--' + status);
+
+            const card = badge.closest('.treasury-card') || badge.closest('tr');
+            if (card) {
+                card.dataset.status = status;
+                const approveBtn = card.querySelector('.js-tx-approve');
+                const rejectBtn = card.querySelector('.js-tx-reject');
+                if (approveBtn) approveBtn.remove();
+                if (rejectBtn) rejectBtn.remove();
+            }
+        }
+
+        function sendStatus(id, status, buttons) {
+            setBusy(buttons, true);
+            const url = '?c=treasury&a=setStatusJson&id=' + encodeURIComponent(id);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({ status: status }).toString()
+            })
+                .then(function (response) {
+                    return response.json().catch(function () {
+                        throw new Error('Invalid server response.');
+                    }).then(function (payload) {
+                        return { status: response.status, payload: payload };
+                    });
+                })
+                .then(function (result) {
+                    if (!result.payload || result.payload.ok !== true) {
+                        const message = (result.payload && result.payload.message) || 'Unable to update status.';
+                        throw new Error(message);
+                    }
+                    updateBadge(id, result.payload.status);
+                    if (typeof result.payload.balance === 'number' || typeof result.payload.pending === 'number') {
+                        updateHeroBalances(result.payload.balance, result.payload.pending);
+                    }
+                    renderFlash('Status updated to ' + result.payload.status + '.', 'alert-success');
+                })
+                .catch(function (error) {
+                    renderFlash(error.message || 'Unable to update status.', 'alert-danger');
+                })
+                .finally(function () {
+                    setBusy(buttons, false);
+                });
+        }
+
+        function handleClick(button) {
+            if (!button) {
+                return;
+            }
+            const id = button.dataset.id;
+            if (!id) {
+                return;
+            }
+            const status = button.classList.contains('js-tx-approve') ? 'approved' : 'rejected';
+            const container = button.closest('.treasury-card') || button.closest('tr');
+            const approveBtn = container ? container.querySelector('.js-tx-approve') : null;
+            const rejectBtn = container ? container.querySelector('.js-tx-reject') : null;
+            sendStatus(id, status, [approveBtn, rejectBtn]);
+        }
+
+        document.addEventListener('click', function (event) {
+            const el = event.target instanceof Element ? event.target : event.target && event.target.parentElement;
+            if (!el) {
+                return;
+            }
+            const btn = el.closest('.js-tx-approve, .js-tx-reject');
+            if (!btn) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            handleClick(btn);
+        }, true);
+
+        window.__TREASURY_AJAX_BOUND = true;
+    }
+
+    /**
      * Entrypoint: once the DOM is ready we attach all behaviour needed for
      * the Treasury-related pages. Each initializer is defensive and will
      * simply exit if the expected DOM elements are missing, so calling them
@@ -598,5 +720,8 @@
         initTransactionsFilter();
         initTreasuryRefresh();
         initManualAttachments();
+        initTransactionStatusActions();
     });
 })();
+
+

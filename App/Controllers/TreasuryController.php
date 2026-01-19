@@ -52,6 +52,11 @@ class TreasuryController extends BaseController
      */
     public function authorize(Request $request, string $action): bool
     {
+        if (strtolower($action) === 'setstatusjson') {
+            // The action performs its own JSON-friendly authorization handling.
+            return true;
+        }
+
         return $this->requireRole(['treasurer', 'admin']);
     }
 
@@ -71,11 +76,13 @@ class TreasuryController extends BaseController
     {
         $transactions = $this->repo()->findAll();
         $balance = $this->repo()->getBalance();
+        $pendingTotal = $this->repo()->getPendingTotal();
 
         return $this->html([
             'activeModule' => 'treasury',
             'transactions' => $transactions,
             'currentBalance' => $balance,
+            'pendingBalance' => $pendingTotal,
             'successMessage' => $this->consumeFlash('treasury.success'),
             'errorMessage' => $this->consumeFlash('treasury.error'),
         ]);
@@ -452,5 +459,73 @@ class TreasuryController extends BaseController
         $this->session()->remove($key);
 
         return $value;
+    }
+
+    private function extractTransactionId(Request $request): int
+    {
+        $id = (int)($request->get('id') ?? $request->post('id') ?? 0);
+        if ($id > 0) {
+            return $id;
+        }
+
+        $uri = (string)($request->server('REQUEST_URI') ?? '');
+        if (preg_match('#/treasury/status/(\d+)#', $uri, $matches)) {
+            return (int)$matches[1];
+        }
+
+        return 0;
+    }
+
+    private function jsonError(string $message, int $statusCode, array $fields = []): JsonResponse
+    {
+        $payload = ['ok' => false, 'message' => $message];
+        if (!empty($fields)) {
+            $payload['fields'] = $fields;
+        }
+
+        return $this->json($payload)->setStatusCode($statusCode);
+    }
+
+    public function setStatusJson(Request $request): JsonResponse
+    {
+        if (!$this->requireLogin()) {
+            return $this->jsonError('Forbidden', 403);
+        }
+        if (!$this->requireRole(['treasurer', 'admin'])) {
+            return $this->jsonError('Forbidden', 403);
+        }
+
+        $id = $this->extractTransactionId($request);
+        $status = trim((string)($request->post('status') ?? ''));
+
+        if ($id <= 0) {
+            return $this->jsonError('Invalid transaction id.', 400);
+        }
+
+        $transaction = $this->repo()->findById($id);
+        if ($transaction === null) {
+            return $this->jsonError('Transaction not found.', 404);
+        }
+
+        if ($status === '') {
+            return $this->jsonError('Status is required.', 400, ['status' => ['Status is required.']]);
+        }
+        if (!in_array($status, ['approved', 'rejected'], true)) {
+            return $this->jsonError('Status must be approved or rejected.', 400, ['status' => ['Status must be approved or rejected.']]);
+        }
+        if (($transaction['status'] ?? '') !== 'pending') {
+            return $this->jsonError('Only pending transactions can be updated.', 400, ['status' => ['Only pending transactions can be updated.']]);
+        }
+
+        $approverId = $this->user?->getIdentity()?->getId();
+        $this->repo()->setStatus($id, $status, $approverId);
+
+        return $this->json([
+            'ok' => true,
+            'id' => $id,
+            'status' => $status,
+            'balance' => $this->repo()->getBalance(),
+            'pending' => $this->repo()->getPendingTotal(),
+        ]);
     }
 }

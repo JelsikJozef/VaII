@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Treasury status update helper (GitHub Copilot / ChatGPT), 2026-01-19
 
 namespace App\Repositories;
 
@@ -111,11 +112,19 @@ class TransactionRepository
      */
     public function getBalance(): float
     {
-        $sql = "SELECT COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END), 0) AS balance FROM transactions";
+        $sql = "SELECT COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END), 0) AS balance FROM transactions WHERE status = 'approved'";
         $stmt = $this->pdo->query($sql);
         $row = $stmt->fetch();
 
         return isset($row['balance']) ? (float)$row['balance'] : 0.0;
+    }
+
+    public function getPendingTotal(): float
+    {
+        $stmt = $this->pdo->query("SELECT COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END), 0) AS pending_balance FROM transactions WHERE status = 'pending'");
+        $row = $stmt->fetch();
+
+        return isset($row['pending_balance']) ? (float)$row['pending_balance'] : 0.0;
     }
 
     /**
@@ -188,5 +197,28 @@ class TransactionRepository
         $stmt->execute(['name' => 'Default cashbox']);
 
         return (int)$this->pdo->lastInsertId();
+    }
+
+    /**
+     * Update the status of a transaction.
+     *
+     * This method changes the `status` and optionally the `approved_by` fields
+     * of a transaction identified by its ID. It also sets the `approved_at` field
+     * to the current timestamp.
+     *
+     * @param int $id ID of the transaction whose status is to be updated.
+     * @param string $status New status value.
+     * @param int|null $approvedBy Optional ID of the user approving the transaction.
+     */
+    public function setStatus(int $id, string $status, ?int $approvedBy = null): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE transactions SET status = :status, approved_by = :approved_by, approved_at = NOW() WHERE id = :id'
+        );
+        $stmt->execute([
+            'status' => $status,
+            'approved_by' => $approvedBy,
+            'id' => $id,
+        ]);
     }
 }
