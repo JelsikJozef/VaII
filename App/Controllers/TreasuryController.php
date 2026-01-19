@@ -57,8 +57,32 @@ class TreasuryController extends BaseController
             return true;
         }
 
-        return $this->requireRole(['treasurer', 'admin']);
-    }
+        $action = strtolower($action);
+        if (in_array($action, ['index', 'refresh'], true)) {
+            // Allow members to view treasury; fallback to true even if session state is stale.
+            return $this->requireLogin() ?: true;
+        }
+        if (in_array($action, ['new', 'store', 'delete'], true)) {
+            return $this->requireLogin();
+        }
+        if (in_array($action, ['edit', 'update'], true)) {
+            if ($this->requireLogin()) {
+                $txId = $this->extractTransactionId($request);
+                if ($txId > 0) {
+                    $tx = $this->repo()->findById($txId);
+                    $currentId = $this->user?->getIdentity()?->getId();
+                    $status = strtolower((string)($tx['status'] ?? ''));
+                    $ownerId = (int)($tx['created_by'] ?? 0);
+                    if ($tx !== null && $status === 'pending' && $ownerId > 0 && $currentId !== null && (int)$currentId === $ownerId) {
+                        return true;
+                    }
+                }
+            }
+            return $this->requireRole(['treasurer', 'admin']);
+        }
+
+         return $this->requireRole(['treasurer', 'admin']);
+     }
 
     /**
      * Renders the main treasury screen with a list of transactions.
@@ -215,6 +239,16 @@ class TreasuryController extends BaseController
             return $this->redirect($this->url('Treasury.index'));
         }
 
+        $currentId = $this->user?->getIdentity()?->getId();
+        $currentRole = $this->user?->getIdentity()?->getRole();
+        $isModerator = in_array($currentRole, ['treasurer', 'admin'], true);
+        $isOwner = $currentId !== null && (int)$currentId === (int)($transaction['created_by'] ?? 0);
+        $statusVal = strtolower((string)($transaction['status'] ?? ''));
+        if (!$isModerator && (!$isOwner || $statusVal !== 'pending')) {
+            $this->flash('treasury.error', 'You cannot edit this transaction.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+
         $balance = $this->repo()->getBalance();
 
         return $this->html([
@@ -226,6 +260,8 @@ class TreasuryController extends BaseController
             'description' => (string)($transaction['description'] ?? ''),
             'status' => (string)($transaction['status'] ?? 'pending'),
             'currentBalance' => $balance,
+            'isModerator' => $isModerator,
+            'isOwnerPending' => $isOwner && $statusVal === 'pending',
         ], 'edit');
     }
 
@@ -264,14 +300,31 @@ class TreasuryController extends BaseController
         $description = trim((string)($request->post('description') ?? ''));
         $status = trim((string)($request->post('status') ?? 'pending'));
 
+        $currentId = $this->user?->getIdentity()?->getId();
+        $currentRole = $this->user?->getIdentity()?->getRole();
+        $isModerator = in_array($currentRole, ['treasurer', 'admin'], true);
+        $isOwnerPending = $currentId !== null && (int)$currentId === (int)($transaction['created_by'] ?? 0) && strtolower((string)($transaction['status'] ?? '')) === 'pending';
+
+        if (!$isModerator && !$isOwnerPending) {
+            $this->flash('treasury.error', 'You cannot edit this transaction.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+        if (!$isModerator) {
+            // Lock type/status for members
+            $type = (string)($transaction['type'] ?? 'deposit');
+            $status = (string)($transaction['status'] ?? 'pending');
+        }
+
         $balance = $this->repo()->getBalance();
 
         $errors = $this->validateTransactionInput($type, $amountRaw, $description, $balance, $transaction);
 
-        if ($status === '') {
-            $errors['status'][] = 'Status is required.';
-        } elseif (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
-            $errors['status'][] = 'Status must be pending, approved, or rejected.';
+        if ($isModerator) {
+            if ($status === '') {
+                $errors['status'][] = 'Status is required.';
+            } elseif (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
+                $errors['status'][] = 'Status must be pending, approved, or rejected.';
+            }
         }
 
         if (!empty($errors)) {
@@ -284,6 +337,8 @@ class TreasuryController extends BaseController
                 'description' => $description,
                 'status' => $status,
                 'currentBalance' => $balance,
+                'isModerator' => $isModerator,
+                'isOwnerPending' => $isOwnerPending,
             ], 'edit');
         }
 
@@ -319,6 +374,19 @@ class TreasuryController extends BaseController
         if ($transaction === null) {
             $this->flash('treasury.error', 'Transaction not found.');
             return $this->redirect($this->url('Treasury.index'));
+        }
+
+        $currentUserId = $this->user?->getIdentity()?->getId();
+        $currentRole = $this->user?->getIdentity()?->getRole();
+        $isAdminOrTreasurer = in_array($currentRole, ['admin', 'treasurer'], true);
+
+        if (!$isAdminOrTreasurer) {
+            $ownerId = (int)($transaction['created_by'] ?? 0);
+            $status = strtolower((string)($transaction['status'] ?? ''));
+            if ($ownerId !== (int)$currentUserId || $status !== 'pending') {
+                $this->flash('treasury.error', 'You cannot delete this transaction.');
+                return $this->redirect($this->url('Treasury.index'));
+            }
         }
 
         $this->repo()->delete($id);

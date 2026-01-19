@@ -13,6 +13,16 @@ $transactions = $transactions ?? [];
 $currentBalance = $currentBalance ?? 0.0;
 $pendingBalance = $pendingBalance ?? 0.0;
 $canModerate = in_array($user?->getRole(), ['treasurer', 'admin'], true);
+$currentUserId = $user?->getIdentity()?->getId();
+$canManageTx = static function (array $tx) use ($canModerate, $currentUserId): bool {
+    if ($canModerate) {
+        return true;
+    }
+
+    $ownerId = (int)($tx['created_by'] ?? 0);
+    $status = strtolower((string)($tx['status'] ?? ''));
+    return ($ownerId > 0 && $currentUserId !== null && (int)$currentUserId === $ownerId && $status === 'pending');
+};
 
 $formatAmount = static function ($amount, string $type): string {
     $value = is_numeric($amount) ? (float)$amount : 0.0;
@@ -113,16 +123,18 @@ $typeMap = [
                             <?= htmlspecialchars($statusData[0], ENT_QUOTES) ?></span>
                     </footer>
                     <div class="treasury-card__actions mt-3 d-flex gap-2">
-                        <a href="<?= $editUrl ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-                        <form method="post" action="<?= $deleteUrl ?>" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this transaction?');">
-                            <input type="hidden" name="id" value="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
-                        <?php if ($canModerate && ($status === 'pending')): ?>
-                            <button type="button" class="btn btn-sm btn-success js-tx-approve" data-id="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">Approve</button>
-                            <button type="button" class="btn btn-sm btn-danger js-tx-reject" data-id="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">Reject</button>
+                        <?php if ($canManageTx($tx)): ?>
+                            <a href="<?= $editUrl ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <form method="post" action="<?= $deleteUrl ?>" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this transaction?');">
+                                <input type="hidden" name="id" value="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
                         <?php endif; ?>
-                    </div>
+                         <?php if ($canModerate && ($status === 'pending')): ?>
+                             <button type="button" class="btn btn-sm btn-success js-tx-approve" data-id="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">Approve</button>
+                             <button type="button" class="btn btn-sm btn-danger js-tx-reject" data-id="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">Reject</button>
+                         <?php endif; ?>
+                     </div>
                 </article>
                 <?php endforeach; ?>
             </div>
