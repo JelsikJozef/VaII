@@ -29,6 +29,8 @@ return [
         '/polls/new' => 'Polls@new',
         '/polls/{id}' => 'Polls@show',
         '/polls/delete/{id}' => 'Polls@delete',
+        '/profile' => 'Profile@index',
+        '/profile/edit' => 'Profile@edit',
     ],
     'POST' => [
         '/login' => 'Auth@login',
@@ -44,5 +46,7 @@ return [
         '/polls/store' => 'Polls@store',
         '/polls/{id}/vote' => 'Polls@vote',
         '/polls/delete/{id}' => 'Polls@delete',
+        '/profile/update' => 'Profile@update',
+        '/profile/password' => 'Profile@changePassword',
     ],
 ];

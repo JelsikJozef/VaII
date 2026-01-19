@@ -29,4 +29,52 @@ class UserRepository
 
         return $row === false ? null : $row;
     }
+
+    public function findById(int $id): ?array
+    {
+        $sql = 'SELECT u.id, u.name, u.email, u.password_hash, r.name AS role_name
+                FROM users u
+                LEFT JOIN roles r ON r.id = u.role_id
+                WHERE u.id = :id
+                LIMIT 1';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+
+        return $row === false ? null : $row;
+    }
+
+    public function updateProfile(int $id, string $name, string $email): void
+    {
+        $sql = 'UPDATE users SET name = :name, email = :email WHERE id = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'name' => $name,
+            'email' => $email,
+            'id' => $id,
+        ]);
+    }
+
+    public function updatePasswordHash(int $id, string $passwordHash): void
+    {
+        $sql = 'UPDATE users SET password_hash = :hash WHERE id = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'hash' => $passwordHash,
+            'id' => $id,
+        ]);
+    }
+
+    public function emailExistsForOtherUser(string $email, int $userId): bool
+    {
+        $sql = 'SELECT 1 FROM users WHERE email = :email AND id <> :id LIMIT 1';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'email' => $email,
+            'id' => $userId,
+        ]);
+
+        return $stmt->fetchColumn() !== false;
+    }
 }

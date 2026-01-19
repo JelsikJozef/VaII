@@ -709,6 +709,98 @@
     }
 
     /**
+     * Initialize the profile forms validation.
+     *
+     * Responsibilities:
+     *  - Validate the profile form fields: name and email.
+     *  - Validate the password form fields: current password, new password, and confirmation.
+     *  - Mirror the server-side validation rules for a consistent user experience.
+     */
+     function initProfileForms() {
+         const profileForm = document.getElementById('profile-form');
+         const passwordForm = document.getElementById('password-form');
+
+         if (profileForm) {
+             profileForm.addEventListener('submit', function (event) {
+                 let valid = true;
+                 const name = profileForm.querySelector('#name');
+                 const email = profileForm.querySelector('#email');
+
+                 if (name) {
+                     const value = (name.value || '').trim();
+                     if (value.length < 2 || value.length > 255) {
+                         name.classList.add('is-invalid');
+                         valid = false;
+                     } else {
+                         name.classList.remove('is-invalid');
+                     }
+                 }
+
+                 if (email) {
+                     const value = (email.value || '').trim();
+                     const emailOk = value !== '' && value.length <= 255 && /.+@.+\..+/.test(value);
+                     if (!emailOk) {
+                         email.classList.add('is-invalid');
+                         valid = false;
+                     } else {
+                         email.classList.remove('is-invalid');
+                     }
+                 }
+
+                 if (!valid) {
+                     event.preventDefault();
+                     event.stopPropagation();
+                     profileForm.classList.add('was-validated');
+                 }
+             });
+         }
+
+         if (passwordForm) {
+             passwordForm.addEventListener('submit', function (event) {
+                 let valid = true;
+                 const current = passwordForm.querySelector('#current_password');
+                 const next = passwordForm.querySelector('#new_password');
+                 const confirm = passwordForm.querySelector('#new_password_confirm');
+
+                 if (current && current.value.trim() === '') {
+                     current.classList.add('is-invalid');
+                     valid = false;
+                 } else if (current) {
+                     current.classList.remove('is-invalid');
+                 }
+
+                 if (next) {
+                     const value = next.value || '';
+                     if (value.length < 8) {
+                         next.classList.add('is-invalid');
+                         valid = false;
+                     } else {
+                         next.classList.remove('is-invalid');
+                     }
+                 }
+
+                 if (confirm) {
+                     if (confirm.value !== (next ? next.value : '')) {
+                         confirm.classList.add('is-invalid');
+                         valid = false;
+                     } else if (confirm.value.length < 8) {
+                         confirm.classList.add('is-invalid');
+                         valid = false;
+                     } else {
+                         confirm.classList.remove('is-invalid');
+                     }
+                 }
+
+                 if (!valid) {
+                     event.preventDefault();
+                     event.stopPropagation();
+                     passwordForm.classList.add('was-validated');
+                 }
+             });
+         }
+     }
+
+    /**
      * Entrypoint: once the DOM is ready we attach all behaviour needed for
      * the Treasury-related pages. Each initializer is defensive and will
      * simply exit if the expected DOM elements are missing, so calling them
@@ -721,6 +813,7 @@
         initTreasuryRefresh();
         initManualAttachments();
         initTransactionStatusActions();
+        initProfileForms();
     });
 })();
 

@@ -48,7 +48,7 @@
         </div>
 
         <div class="col-12 col-md-6 col-lg-3">
-            <a href="/polls" class="text-decoration-none text-reset">
+            <a href="<?= $link->url(['Profile', 'index']) ?>" class="text-decoration-none text-reset">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Polls</h5>
