@@ -76,6 +76,17 @@ class UserRepository
         return $stmt->fetchAll();
     }
 
+    public function findAllUsers(): array
+    {
+        $sql = 'SELECT u.id, u.name, u.email, u.created_at, r.name AS role_name
+                FROM users u
+                LEFT JOIN roles r ON r.id = u.role_id
+                ORDER BY u.created_at ASC';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function approveUser(int $id, int $roleId): void
     {
         $stmt = $this->pdo->prepare('UPDATE users SET role_id = :role_id WHERE id = :id');
@@ -84,14 +95,19 @@ class UserRepository
 
     public function rejectUser(int $id): void
     {
-        $stmt = $this->pdo->prepare('DELETE FROM users WHERE id = :id');
-        $stmt->execute(['id' => $id]);
+        $this->deleteUser($id);
     }
 
     public function setRole(int $id, int $roleId): void
     {
         $stmt = $this->pdo->prepare('UPDATE users SET role_id = :role_id WHERE id = :id');
         $stmt->execute(['role_id' => $roleId, 'id' => $id]);
+    }
+
+    public function deleteUser(int $id): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM users WHERE id = :id');
+        $stmt->execute(['id' => $id]);
     }
 
     public function listRoles(bool $includePending = false): array

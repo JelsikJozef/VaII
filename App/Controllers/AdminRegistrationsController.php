@@ -23,8 +23,8 @@ class AdminRegistrationsController extends BaseController
 
     public function index(Request $request): Response
     {
-        $pending = $this->repository()->findPendingUsers();
-        $roles = $this->repository()->listRoles();
+        $pending = $this->repository()->findAllUsers();
+        $roles = $this->repository()->listRoles(true);
 
         return $this->html([
             'activeModule' => 'admin',
@@ -58,8 +58,8 @@ class AdminRegistrationsController extends BaseController
             return $this->redirect($this->url('AdminRegistrations.index'));
         }
 
-        $this->repository()->rejectUser($id);
-        $this->flash('admin.reg.success', 'Registration rejected.');
+        $this->repository()->deleteUser($id);
+        $this->flash('admin.reg.success', 'User deleted.');
 
         return $this->redirect($this->url('AdminRegistrations.index'));
     }

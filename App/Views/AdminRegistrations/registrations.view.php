@@ -14,7 +14,7 @@ $roles = $roles ?? [];
 ?>
 
 <div class="container mt-4">
-    <h1 class="mb-3">Pending registrations</h1>
+    <h1 class="mb-3">Account administration</h1>
 
     <?php if (!empty($successMessage)): ?>
         <div class="alert alert-success" role="alert">
@@ -28,7 +28,7 @@ $roles = $roles ?? [];
     <?php endif; ?>
 
     <?php if (empty($pending)): ?>
-        <p class="text-muted">No pending registrations.</p>
+        <p class="text-muted">No users found.</p>
     <?php else: ?>
         <div class="table-responsive">
             <table class="table align-middle">
@@ -48,27 +48,28 @@ $roles = $roles ?? [];
                         <td><?= htmlspecialchars((string)($user['email'] ?? ''), ENT_QUOTES) ?></td>
                         <td><?= htmlspecialchars((string)($user['created_at'] ?? ''), ENT_QUOTES) ?></td>
                         <td>
-                            <form class="d-flex gap-2" method="post" action="<?= $link->url('AdminRegistrations.setRole', ['id' => $user['id'] ?? 0]) ?>">
-                                <input type="hidden" name="id" value="<?= htmlspecialchars((string)($user['id'] ?? ''), ENT_QUOTES) ?>">
-                                <select name="role_id" class="form-select form-select-sm" required>
-                                    <?php foreach ($roles as $role): ?>
-                                        <option value="<?= htmlspecialchars((string)($role['id'] ?? ''), ENT_QUOTES) ?>">
-                                            <?= htmlspecialchars((string)($role['name'] ?? ''), ENT_QUOTES) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <button type="submit" class="btn btn-sm btn-outline-secondary">Set</button>
-                            </form>
+                            <div class="d-flex gap-2 align-items-center">
+                                <?php if (strtolower((string)($user['role_name'] ?? '')) === 'pending'): ?>
+                                    <span class="badge bg-warning text-dark">pending</span>
+                                <?php endif; ?>
+                                <form class="d-flex gap-2" method="post" action="<?= $link->url('AdminRegistrations.setRole', ['id' => $user['id'] ?? 0]) ?>">
+                                    <input type="hidden" name="id" value="<?= htmlspecialchars((string)($user['id'] ?? ''), ENT_QUOTES) ?>">
+                                    <select name="role_id" class="form-select form-select-sm" required>
+                                        <?php foreach ($roles as $role): ?>
+                                            <option value="<?= htmlspecialchars((string)($role['id'] ?? ''), ENT_QUOTES) ?>"
+                                                <?= strtolower((string)($user['role_name'] ?? '')) === strtolower((string)($role['name'] ?? '')) ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars((string)($role['name'] ?? ''), ENT_QUOTES) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Set</button>
+                                </form>
+                            </div>
                         </td>
                         <td class="text-end">
-                            <form class="d-inline" method="post" action="<?= $link->url('AdminRegistrations.approve', ['id' => $user['id'] ?? 0]) ?>">
+                            <form class="d-inline ms-2" method="post" action="<?= $link->url('AdminRegistrations.reject', ['id' => $user['id'] ?? 0]) ?>" onsubmit="return confirm('Delete this user?');">
                                 <input type="hidden" name="id" value="<?= htmlspecialchars((string)($user['id'] ?? ''), ENT_QUOTES) ?>">
-                                <input type="hidden" name="role_id" value="<?= htmlspecialchars((string)($roles[0]['id'] ?? ''), ENT_QUOTES) ?>">
-                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                            </form>
-                            <form class="d-inline ms-2" method="post" action="<?= $link->url('AdminRegistrations.reject', ['id' => $user['id'] ?? 0]) ?>" onsubmit="return confirm('Reject this registration?');">
-                                <input type="hidden" name="id" value="<?= htmlspecialchars((string)($user['id'] ?? ''), ENT_QUOTES) ?>">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                             </form>
                         </td>
                     </tr>
