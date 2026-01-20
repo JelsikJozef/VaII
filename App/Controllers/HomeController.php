@@ -1,10 +1,14 @@
 <?php
+// AI-GENERATED: Home dashboard activity feed update (GitHub Copilot / ChatGPT), 2026-01-20
 
 namespace App\Controllers;
+
+require_once __DIR__ . '/../../Framework/ClassLoader.php';
 
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use App\Repositories\ActivityRepository;
 use App\Repositories\NewsRepository;
 
 /**
@@ -40,11 +44,16 @@ class HomeController extends BaseController
      */
     public function index(Request $request): Response
     {
-        $news = (new NewsRepository())->latest(10);
+        $activities = (new ActivityRepository())->latest(10);
+
+        if (empty($activities)) {
+            $fallbackNews = (new NewsRepository())->latest(10);
+            $activities = $this->mapNewsToActivities($fallbackNews);
+        }
 
         return $this->html([
             'activeModule' => 'home',
-            'news' => $news,
+            'activities' => $activities,
         ]);
     }
 
@@ -61,5 +70,25 @@ class HomeController extends BaseController
         return $this->html([
             'activeModule' => 'home',
         ]);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $newsItems
+     * @return array<int,array<string,mixed>>
+     */
+    private function mapNewsToActivities(array $newsItems): array
+    {
+        $mapped = [];
+        foreach ($newsItems as $item) {
+            $mapped[] = [
+                'title' => (string)($item['message'] ?? ''),
+                'action' => (string)($item['type'] ?? ''),
+                'details' => isset($item['meta']) ? json_encode($item['meta'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
+                'actor_name' => 'System',
+                'actor_email' => null,
+                'created_at' => (string)($item['ts'] ?? null),
+            ];
+        }
+        return $mapped;
     }
 }

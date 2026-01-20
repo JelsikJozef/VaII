@@ -84,35 +84,56 @@
                     <a href="#" class="esn-activity-link">View all</a>
                 </div>
                 <div class="activity-list" role="list">
-                    <?php if (!empty($news)): ?>
-                        <?php foreach ($news as $item): ?>
+                    <?php if (!empty($activities)): ?>
+                        <?php foreach ($activities as $item): ?>
                             <?php
-                                $typeValue = (string)($item['type'] ?? '');
-                                $typeLower = strtolower($typeValue);
+                                $actionValue = (string)($item['action'] ?? '');
                                 $dotClass = 'activity-dot';
-                                if (str_contains($typeLower, 'assign')) {
+                                $actionLower = strtolower($actionValue);
+                                if (str_contains($actionLower, 'assign') || str_contains($actionLower, 'create')) {
                                     $dotClass .= ' activity-dot--success';
-                                } elseif (str_contains($typeLower, 'delete')) {
+                                } elseif (str_contains($actionLower, 'delete')) {
                                     $dotClass .= ' activity-dot--danger';
-                                } elseif (str_contains($typeLower, 'status') || str_contains($typeLower, 'update')) {
+                                } elseif (str_contains($actionLower, 'status') || str_contains($actionLower, 'update')) {
                                     $dotClass .= ' activity-dot--warning';
                                 } else {
                                     $dotClass .= ' activity-dot--info';
                                 }
-                                // AI-GENERATED: Unified activity timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
-                                $timestamp = $formatDateTime($item['ts'] ?? null);
+                                $actorName = trim((string)($item['actor_name'] ?? ''));
+                                $actorEmail = trim((string)($item['actor_email'] ?? ''));
+                                $actor = $actorName !== '' ? $actorName : ($actorEmail !== '' ? $actorEmail : 'System');
+                                $timestamp = $formatDateTime($item['created_at'] ?? null);
+                                $detailsRaw = (string)($item['details'] ?? '');
+                                $detailsText = '';
+                                if ($detailsRaw !== '') {
+                                    $decoded = json_decode($detailsRaw, true);
+                                    if (is_array($decoded) && !empty($decoded)) {
+                                        $pairs = [];
+                                        foreach ($decoded as $k => $v) {
+                                            $pairs[] = $k . ': ' . (is_scalar($v) ? (string)$v : json_encode($v));
+                                        }
+                                        $detailsText = implode(', ', $pairs);
+                                    } else {
+                                        $detailsText = $detailsRaw;
+                                    }
+                                }
                             ?>
-                            <article class="activity-item" data-type="<?= htmlspecialchars($typeValue, ENT_QUOTES) ?>" role="listitem">
+                            <article class="activity-item" data-action="<?= htmlspecialchars($actionValue, ENT_QUOTES) ?>" role="listitem">
                                 <span class="<?= $dotClass ?>" aria-hidden="true"><span class="activity-dot__inner"></span></span>
                                 <div class="activity-body">
                                     <div class="activity-title">
-                                        <?= htmlspecialchars((string)($item['message'] ?? ''), ENT_QUOTES) ?>
+                                        <?= htmlspecialchars((string)($item['title'] ?? ''), ENT_QUOTES) ?>
                                     </div>
                                     <div class="activity-meta">
-                                        <span class="activity-chip"><?= htmlspecialchars($typeValue !== '' ? $typeValue : 'ACTIVITY', ENT_QUOTES) ?></span>
+                                        <span class="activity-chip"><?= htmlspecialchars($actionValue !== '' ? $actionValue : 'ACTIVITY', ENT_QUOTES) ?></span>
+                                        <span class="esn-activity-separator" aria-hidden="true">•</span>
+                                        <span class="activity-actor">by <?= htmlspecialchars($actor, ENT_QUOTES) ?></span>
                                         <span class="esn-activity-separator" aria-hidden="true">•</span>
                                         <span class="activity-time js-iso-time"><?= htmlspecialchars($timestamp, ENT_QUOTES) ?></span>
                                     </div>
+                                    <?php if ($detailsText !== ''): ?>
+                                        <div class="activity-details text-muted"><?= htmlspecialchars($detailsText, ENT_QUOTES) ?></div>
+                                    <?php endif; ?>
                                 </div>
                             </article>
                         <?php endforeach; ?>
