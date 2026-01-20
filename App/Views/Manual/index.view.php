@@ -117,25 +117,19 @@ $difficultyPill = static function (?string $diff): ?array {
                     $contentSnippet = substr($contentSnippet, 0, 157) . '…';
                 }
             ?>
-            <article class="esn-card esn-record-card card h-100">
-                <div class="card-body d-flex flex-column gap-3">
-                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-                        <div>
-                            <a href="<?= $link->url('Manual.show', ['id' => $id]) ?>" class="text-decoration-none"><h2 class="h5 mb-1"><?= htmlspecialchars($title, ENT_QUOTES) ?></h2></a>
-                            <div class="text-muted small">By <?= htmlspecialchars($creator, ENT_QUOTES) ?> • <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
-                        </div>
-                        <?php if ($canManage): ?>
-                            <div class="d-flex flex-column flex-md-row gap-2">
-                                <a href="<?= $link->url('Manual.edit', ['id' => $id]) ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-                                <form method="post" action="<?= $link->url('Manual.delete', ['id' => $id]) ?>" onsubmit="return confirm('Delete this article?');" class="d-inline">
-                                    <input type="hidden" name="id" value="<?= htmlspecialchars((string)$id, ENT_QUOTES) ?>">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                </form>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+            <article class="esn-card esn-record-card manual-card card h-100">
+                <div class="manual-card__inner">
+                    <header class="manual-card__header">
+                        <h2 class="manual-card__title">
+                            <a href="<?= $link->url('Manual.show', ['id' => $id]) ?>" class="manual-card__title-link">
+                                <?= htmlspecialchars($title, ENT_QUOTES) ?>
+                            </a>
+                        </h2>
+                    </header>
 
-                    <div class="d-flex flex-wrap align-items-center gap-2">
+                    <div class="manual-card__meta text-muted small">By <?= htmlspecialchars($creator, ENT_QUOTES) ?> • <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
+
+                    <div class="manual-card__badges">
                         <?php if ($cat !== ''): ?>
                             <span class="esn-pill esn-pill--neutral">Category: <?= htmlspecialchars($cat, ENT_QUOTES) ?></span>
                         <?php endif; ?>
@@ -144,9 +138,26 @@ $difficultyPill = static function (?string $diff): ?array {
                         <?php endif; ?>
                     </div>
 
-                    <?php if ($contentSnippet !== ''): ?>
-                        <p class="text-muted mb-0"><?= htmlspecialchars($contentSnippet, ENT_QUOTES) ?></p>
-                    <?php endif; ?>
+                    <div class="manual-card__body">
+                        <?php if ($contentSnippet !== ''): ?>
+                            <p class="manual-card__excerpt text-muted mb-0"><?= htmlspecialchars($contentSnippet, ENT_QUOTES) ?></p>
+                        <?php else: ?>
+                            <p class="manual-card__placeholder text-muted mb-0">No preview available.</p>
+                        <?php endif; ?>
+                    </div>
+
+                    <footer class="manual-card__footer">
+                        <a href="<?= $link->url('Manual.show', ['id' => $id]) ?>" class="btn btn-sm btn-outline-secondary">Open</a>
+                        <?php if ($canManage): ?>
+                            <div class="manual-card__footer-actions">
+                                <a href="<?= $link->url('Manual.edit', ['id' => $id]) ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form method="post" action="<?= $link->url('Manual.delete', ['id' => $id]) ?>" onsubmit="return confirm('Delete this article?');">
+                                    <input type="hidden" name="id" value="<?= htmlspecialchars((string)$id, ENT_QUOTES) ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </div>
+                        <?php endif; ?>
+                    </footer>
                 </div>
             </article>
             <?php endforeach; ?>
