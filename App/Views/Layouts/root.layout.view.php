@@ -72,27 +72,35 @@ if (isset($activeModule) && is_string($activeModule) && $activeModule !== '') {
                        href="<?= $link->url('Treasury.index') ?>">ESN Treasury</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= $activeModule === 'esncards' ? 'active' : '' ?>" href="/esncards">ESNcards</a>
+                    <a class="nav-link <?= $activeModule === 'esncards' ? 'active' : '' ?>" href="<?= $link->url('Esncards.index') ?>">ESNcards</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= $activeModule === 'manual' ? 'active' : '' ?>" href="/manual">Semester Manual</a>
+                    <a class="nav-link <?= $activeModule === 'manual' ? 'active' : '' ?>" href="<?= $link->url('Manual.index') ?>">Semester Manual</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= $activeModule === 'profile' ? 'active' : '' ?>" href="/profile">Profile</a>
+                    <a class="nav-link <?= $activeModule === 'profile' ? 'active' : '' ?>" href="<?= $link->url('Profile.index') ?>">Profile</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= $activeModule === 'polls' ? 'active' : '' ?>" href="/polls">Polls</a>
+                    <a class="nav-link <?= $activeModule === 'polls' ? 'active' : '' ?>" href="<?= $link->url('Polls.index') ?>">Polls</a>
                 </li>
                 <?php if ($user?->isLoggedIn()): ?>
                     <li class="nav-item">
                         <span class="nav-link disabled"><?= htmlspecialchars((string)($user->getName() ?? $user->getEmail()), ENT_QUOTES) ?></span>
                     </li>
+                    <?php if ($user?->getRole() === 'admin'): ?>
+                         <li class="nav-item">
+                            <a class="nav-link <?= $activeModule === 'admin' ? 'active' : '' ?>" href="<?= $link->url('AdminRegistrations.index') ?>">Admin: Accounts</a>
+                        </li>
+                     <?php endif; ?>
                     <li class="nav-item">
                         <a class="nav-link" href="<?= $link->url('Auth.logout') ?>">Logout</a>
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
                         <a class="nav-link <?= $activeModule === 'auth' ? 'active' : '' ?>" href="<?= $link->url('Auth.loginForm') ?>">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?= $activeModule === 'auth' ? 'active' : '' ?>" href="<?= $link->url('Auth.registerForm') ?>">Register</a>
                     </li>
                 <?php endif; ?>
             </ul>

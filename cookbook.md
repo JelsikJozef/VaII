@@ -238,15 +238,96 @@ B) knowledge_articles
 - created_at DATETIME NOT NULL
 - updated_at DATETIME NOT NULL
 
-C) attachments
-- id INT PK AUTO_INCREMENT
-- article_id INT NOT NULL (FK -> knowledge_articles.id ON DELETE CASCADE)
-- filename_original VARCHAR(255) NOT NULL
-- filename_stored VARCHAR(255) NOT NULL
-- mime VARCHAR(255) NOT NULL
-- size_bytes INT NOT NULL
-- uploaded_by_user_id INT NULL
-- created_at DATETIME NOT NULL
+C) attachments 
+
+id INT PK AUTO_INCREMENT
+article_id INT NOT NULL (FK -> knowledge_articles.id ON DELETE CASCADE)
+file_path VARCHAR(512) NULL      -- stored file path relative to public/, e.g. "uploads/manual/uuid.pdf"
+url VARCHAR(512) NULL            -- optional external link
+description VARCHAR(255) NULL    -- optional label
+created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+
+D) polls
+# Database Schema – Polls
+
+---
+
+## Table: `poll_votes`
+
+### Columns
+- `id` – int(10) unsigned, AUTO_INCREMENT
+- `poll_id` – int(10) unsigned
+- `option_id` – int(10) unsigned
+- `user_id` – int(10) unsigned
+- `created_at` – datetime DEFAULT current_timestamp()
+
+### Indexes
+- **PRIMARY KEY** (`id`)
+- **UNIQUE** (`poll_id`, `user_id`)
+- **INDEX** (`poll_id`)
+- **INDEX** (`option_id`)
+- **INDEX** (`user_id`)
+- **INDEX** (`option_id`, `poll_id`)
+
+### Foreign Keys
+- (`option_id`, `poll_id`) → `poll_options(id, poll_id)`
+    - ON DELETE: CASCADE
+    - ON UPDATE: CASCADE
+- (`poll_id`) → `polls(id)`
+    - ON DELETE: CASCADE
+    - ON UPDATE: CASCADE
+- (`user_id`) → `users(id)`
+    - ON DELETE: RESTRICT
+    - ON UPDATE: CASCADE
+
+---
+
+## Table: `poll_options`
+
+### Columns
+- `id` – int(10) unsigned, AUTO_INCREMENT
+- `poll_id` – int(10) unsigned
+- `text` – varchar(200)
+- `created_at` – datetime DEFAULT current_timestamp()
+
+### Indexes
+- **PRIMARY KEY** (`id`)
+- **UNIQUE** (`id`, `poll_id`)
+- **INDEX** (`poll_id`)
+
+### Foreign Keys
+- (`poll_id`) → `polls(id)`
+    - ON DELETE: CASCADE
+    - ON UPDATE: CASCADE
+
+---
+
+## Table: `polls`
+
+### Columns
+- `id` – int(10) unsigned, AUTO_INCREMENT
+- `question` – varchar(300)
+- `created_by` – int(10) unsigned
+- `created_at` – datetime DEFAULT current_timestamp()
+- `is_active` – tinyint(1) DEFAULT 1
+
+### Indexes
+- **PRIMARY KEY** (`id`)
+- **INDEX** (`created_by`)
+- **INDEX** (`is_active`)
+
+### Foreign Keys
+- (`created_by`) → `users(id)`
+    - ON DELETE: RESTRICT
+    - ON UPDATE: CASCADE
+
+
+Indexes:
+attachments(article_id)
+
+Constraint:
+(file_path IS NOT NULL AND file_path <> '') OR (url IS NOT NULL AND url <> '')
+
 
 Indexes:
 - attachments(article_id)
@@ -508,7 +589,6 @@ Build (core):
 
 Skip:
 - automated tests
-- Polls module (optional if time remains)
 - advanced reporting
 
 ===============================================================================

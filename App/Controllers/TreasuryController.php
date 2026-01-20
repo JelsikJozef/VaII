@@ -11,6 +11,7 @@ use Framework\Http\Responses\Response;
 use Framework\Http\Responses\JsonResponse;
 use Framework\Http\Session;
 use App\Repositories\TransactionRepository;
+use App\Repositories\NewsRepository;
 
 /**
  * Controller responsible for managing treasury transactions.
@@ -39,6 +40,9 @@ class TreasuryController extends BaseController
      */
     private ?Session $flashSession = null;
 
+    /** @var NewsRepository|null */
+    private ?NewsRepository $news = null;
+
     /**
      * Checks whether the current user is allowed to execute a given action.
      *
@@ -52,8 +56,37 @@ class TreasuryController extends BaseController
      */
     public function authorize(Request $request, string $action): bool
     {
-        return $this->requireRole(['treasurer', 'admin']);
-    }
+        if (strtolower($action) === 'setstatusjson') {
+            // The action performs its own JSON-friendly authorization handling.
+            return true;
+        }
+
+        $action = strtolower($action);
+        if (in_array($action, ['index', 'refresh'], true)) {
+            // Allow members to view treasury; fallback to true even if session state is stale.
+            return $this->requireLogin() ?: true;
+        }
+        if (in_array($action, ['new', 'store', 'delete'], true)) {
+            return $this->requireLogin();
+        }
+        if (in_array($action, ['edit', 'update'], true)) {
+            if ($this->requireLogin()) {
+                $txId = $this->extractTransactionId($request);
+                if ($txId > 0) {
+                    $tx = $this->repo()->findById($txId);
+                    $currentId = $this->user?->getIdentity()?->getId();
+                    $status = strtolower((string)($tx['status'] ?? ''));
+                    $ownerId = (int)($tx['created_by'] ?? 0);
+                    if ($tx !== null && $status === 'pending' && $ownerId > 0 && $currentId !== null && (int)$currentId === $ownerId) {
+                        return true;
+                    }
+                }
+            }
+            return $this->requireRole(['treasurer', 'admin']);
+        }
+
+         return $this->requireRole(['treasurer', 'admin']);
+     }
 
     /**
      * Renders the main treasury screen with a list of transactions.
@@ -71,11 +104,13 @@ class TreasuryController extends BaseController
     {
         $transactions = $this->repo()->findAll();
         $balance = $this->repo()->getBalance();
+        $pendingTotal = $this->repo()->getPendingTotal();
 
         return $this->html([
             'activeModule' => 'treasury',
             'transactions' => $transactions,
             'currentBalance' => $balance,
+            'pendingBalance' => $pendingTotal,
             'successMessage' => $this->consumeFlash('treasury.success'),
             'errorMessage' => $this->consumeFlash('treasury.error'),
         ]);
@@ -153,8 +188,15 @@ class TreasuryController extends BaseController
         }
 
         $amount = (float)$amountRaw;
-        $proposedBy = $this->user?->getName();
-        $this->repo()->create($type, $amount, $description, 'pending', $proposedBy);
+        $cashboxId = $this->repo()->ensureDefaultCashboxId();
+        $createdBy = $this->user?->getIdentity()?->getId();
+        $txId = $this->repo()->create($cashboxId, $type, $amount, $description, 'pending', $createdBy, null);
+        $this->news()->log('transaction.created', 'New transaction submitted', [
+             'id' => $txId,
+             'type' => $type,
+             'amount' => $amount,
+             'user' => $createdBy,
+         ]);
 
         $this->flash('treasury.success', 'Transaction successfully registered.');
 
@@ -207,6 +249,16 @@ class TreasuryController extends BaseController
             return $this->redirect($this->url('Treasury.index'));
         }
 
+        $currentId = $this->user?->getIdentity()?->getId();
+        $currentRole = $this->user?->getIdentity()?->getRole();
+        $isModerator = in_array($currentRole, ['treasurer', 'admin'], true);
+        $isOwner = $currentId !== null && (int)$currentId === (int)($transaction['created_by'] ?? 0);
+        $statusVal = strtolower((string)($transaction['status'] ?? ''));
+        if (!$isModerator && (!$isOwner || $statusVal !== 'pending')) {
+            $this->flash('treasury.error', 'You cannot edit this transaction.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+
         $balance = $this->repo()->getBalance();
 
         return $this->html([
@@ -218,6 +270,8 @@ class TreasuryController extends BaseController
             'description' => (string)($transaction['description'] ?? ''),
             'status' => (string)($transaction['status'] ?? 'pending'),
             'currentBalance' => $balance,
+            'isModerator' => $isModerator,
+            'isOwnerPending' => $isOwner && $statusVal === 'pending',
         ], 'edit');
     }
 
@@ -256,14 +310,31 @@ class TreasuryController extends BaseController
         $description = trim((string)($request->post('description') ?? ''));
         $status = trim((string)($request->post('status') ?? 'pending'));
 
+        $currentId = $this->user?->getIdentity()?->getId();
+        $currentRole = $this->user?->getIdentity()?->getRole();
+        $isModerator = in_array($currentRole, ['treasurer', 'admin'], true);
+        $isOwnerPending = $currentId !== null && (int)$currentId === (int)($transaction['created_by'] ?? 0) && strtolower((string)($transaction['status'] ?? '')) === 'pending';
+
+        if (!$isModerator && !$isOwnerPending) {
+            $this->flash('treasury.error', 'You cannot edit this transaction.');
+            return $this->redirect($this->url('Treasury.index'));
+        }
+        if (!$isModerator) {
+            // Lock type/status for members
+            $type = (string)($transaction['type'] ?? 'deposit');
+            $status = (string)($transaction['status'] ?? 'pending');
+        }
+
         $balance = $this->repo()->getBalance();
 
         $errors = $this->validateTransactionInput($type, $amountRaw, $description, $balance, $transaction);
 
-        if ($status === '') {
-            $errors['status'][] = 'Status is required.';
-        } elseif (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
-            $errors['status'][] = 'Status must be pending, approved, or rejected.';
+        if ($isModerator) {
+            if ($status === '') {
+                $errors['status'][] = 'Status is required.';
+            } elseif (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
+                $errors['status'][] = 'Status must be pending, approved, or rejected.';
+            }
         }
 
         if (!empty($errors)) {
@@ -276,11 +347,19 @@ class TreasuryController extends BaseController
                 'description' => $description,
                 'status' => $status,
                 'currentBalance' => $balance,
+                'isModerator' => $isModerator,
+                'isOwnerPending' => $isOwnerPending,
             ], 'edit');
         }
 
         $amount = (float)$amountRaw;
         $this->repo()->update($id, $type, $amount, $description, $status);
+
+        $this->news()->log('transaction.updated', 'Transaction updated', [
+             'id' => $id,
+             'status' => $status,
+             'user' => $this->user?->getIdentity()?->getId(),
+         ]);
 
         $this->flash('treasury.success', 'Transaction updated');
 
@@ -313,7 +392,24 @@ class TreasuryController extends BaseController
             return $this->redirect($this->url('Treasury.index'));
         }
 
+        $currentUserId = $this->user?->getIdentity()?->getId();
+        $currentRole = $this->user?->getIdentity()?->getRole();
+        $isAdminOrTreasurer = in_array($currentRole, ['admin', 'treasurer'], true);
+
+        if (!$isAdminOrTreasurer) {
+            $ownerId = (int)($transaction['created_by'] ?? 0);
+            $status = strtolower((string)($transaction['status'] ?? ''));
+            if ($ownerId !== (int)$currentUserId || $status !== 'pending') {
+                $this->flash('treasury.error', 'You cannot delete this transaction.');
+                return $this->redirect($this->url('Treasury.index'));
+            }
+        }
+
         $this->repo()->delete($id);
+        $this->news()->log('transaction.deleted', 'Transaction deleted', [
+             'id' => $id,
+             'user' => $this->user?->getIdentity()?->getId(),
+         ]);
         $this->flash('treasury.success', 'Transaction deleted');
 
         return $this->redirect($this->url('Treasury.index'));
@@ -451,5 +547,87 @@ class TreasuryController extends BaseController
         $this->session()->remove($key);
 
         return $value;
+    }
+
+    private function extractTransactionId(Request $request): int
+    {
+        $id = (int)($request->get('id') ?? $request->post('id') ?? 0);
+        if ($id > 0) {
+            return $id;
+        }
+
+        $uri = (string)($request->server('REQUEST_URI') ?? '');
+        if (preg_match('#/treasury/status/(\d+)#', $uri, $matches)) {
+            return (int)$matches[1];
+        }
+
+        return 0;
+    }
+
+    private function jsonError(string $message, int $statusCode, array $fields = []): JsonResponse
+    {
+        $payload = ['ok' => false, 'message' => $message];
+        if (!empty($fields)) {
+            $payload['fields'] = $fields;
+        }
+
+        return $this->json($payload)->setStatusCode($statusCode);
+    }
+
+    public function setStatusJson(Request $request): JsonResponse
+    {
+        if (!$this->requireLogin()) {
+            return $this->jsonError('Forbidden', 403);
+        }
+        if (!$this->requireRole(['treasurer', 'admin'])) {
+            return $this->jsonError('Forbidden', 403);
+        }
+
+        $id = $this->extractTransactionId($request);
+        $status = trim((string)($request->post('status') ?? ''));
+
+        if ($id <= 0) {
+            return $this->jsonError('Invalid transaction id.', 400);
+        }
+
+        $transaction = $this->repo()->findById($id);
+        if ($transaction === null) {
+            return $this->jsonError('Transaction not found.', 404);
+        }
+
+        if ($status === '') {
+            return $this->jsonError('Status is required.', 400, ['status' => ['Status is required.']]);
+        }
+        if (!in_array($status, ['approved', 'rejected'], true)) {
+            return $this->jsonError('Status must be approved or rejected.', 400, ['status' => ['Status must be approved or rejected.']]);
+        }
+        if (($transaction['status'] ?? '') !== 'pending') {
+            return $this->jsonError('Only pending transactions can be updated.', 400, ['status' => ['Only pending transactions can be updated.']]);
+        }
+
+        $approverId = $this->user?->getIdentity()?->getId();
+        $this->repo()->setStatus($id, $status, $approverId);
+
+        $this->news()->log('transaction.status', 'Transaction status updated', [
+             'id' => $id,
+             'status' => $status,
+             'user' => $approverId,
+         ]);
+
+        return $this->json([
+            'ok' => true,
+            'id' => $id,
+            'status' => $status,
+            'balance' => $this->repo()->getBalance(),
+            'pending' => $this->repo()->getPendingTotal(),
+        ]);
+    }
+
+    private function news(): NewsRepository
+    {
+        if ($this->news === null) {
+            $this->news = new NewsRepository();
+        }
+        return $this->news;
     }
 }

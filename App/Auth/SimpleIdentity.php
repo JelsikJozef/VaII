@@ -1,11 +1,11 @@
 <?php
-// AI-GENERATED: Lightweight identity value object (GitHub Copilot / ChatGPT), 2026-01-18
+// AI-GENERATED: Lightweight identity implementation for session auth (GitHub Copilot / ChatGPT), 2026-01-18
 
 namespace App\Auth;
 
 use Framework\Core\IIdentity;
 
-class UserIdentity implements IIdentity
+class SimpleIdentity implements IIdentity
 {
     private int $id;
     private string $name;
@@ -17,7 +17,7 @@ class UserIdentity implements IIdentity
         $this->id = $id;
         $this->name = $name;
         $this->email = $email;
-        $this->role = strtolower($role);
+        $this->role = $role;
     }
 
     public function getId(): int

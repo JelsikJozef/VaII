@@ -6,6 +6,8 @@ use App\Configuration;
 use Framework\Core\App;
 use Framework\Http\Request;
 use Framework\Support\View as ViewHelper;
+// AI-GENERATED: Inject date formatter helper into view data (GitHub Copilot / ChatGPT), 2026-01-20
+use Framework\Support\DateFormatter;
 
 /**
  * Class ViewResponse
@@ -69,6 +71,7 @@ class ViewResponse extends Response
         $viewHelpers = [
             'user' => $this->app->getAppUser(),
             'link' => $this->app->getLinkGenerator(),
+            'formatDateTime' => static fn($value) => DateFormatter::formatDateTime($value),
         ];
 
         // Selected layout is controlled by the helper via reference; default to root layout

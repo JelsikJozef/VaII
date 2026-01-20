@@ -1,9 +1,11 @@
+// AI-GENERATED: Frontend helpers (GitHub Copilot / ChatGPT), 2026-01-18
 // Custom JS for VAIICKO project
 // Client-side validation, dynamic treasury balance preview, transaction filtering
 // and AJAX-based refresh for the ESN Treasury module.
 
 (function () {
     'use strict';
+
 
     /**
      * Display a success flash message if the backend stored one in the layout.
@@ -362,7 +364,7 @@
                 <h3 class="treasury-card__title">${(tx.title || tx.description || 'Untitled transaction')}</h3>
                 <p class="treasury-card__meta">Proposed by ${(tx.proposed_by || 'Unspecified member')}</p>
                 <footer class="treasury-card__footer">
-                    <span class="treasury-card__date">${tx.created_at || ''}</span>
+                    <span class="treasury-card__date">${formatDateTimeClient(tx.created_at)}</span>
                     <span class="treasury-status ${statusData.className}">${statusData.label}</span>
                 </footer>
             `;
@@ -429,6 +431,454 @@
     }
 
     /**
+     * Escape HTML special characters in a string.
+     *
+     * @param {string} value
+     *   The input string to escape.
+     * @return {string}
+     *   The escaped string.
+     */
+    function escapeHtml(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    /**
+     * Convert a file size in bytes to a human-readable string.
+     *
+     * @param {number} bytes
+     *   The file size in bytes.
+     * @return {string}
+     *   The human-readable file size.
+     */
+    function humanFileSize(bytes) {
+        if (!bytes || Number.isNaN(Number(bytes))) {
+            return '';
+        }
+        const kb = bytes / 1024;
+        if (kb < 1024) {
+            return kb.toFixed(1) + ' KB';
+        }
+        return (kb / 1024).toFixed(2) + ' MB';
+    }
+
+    // AI-GENERATED: Client-side fallback date formatter (GitHub Copilot / ChatGPT), 2026-01-20
+    function formatDateTimeClient(value) {
+        if (value === null || value === undefined || String(value).trim() === '') {
+            return '—';
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return String(value);
+        }
+        const day = String(date.getDate());
+        const month = String(date.getMonth() + 1);
+        const year = String(date.getFullYear());
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return day + '. ' + month + '. ' + year + ', ' + hours + ':' + minutes;
+    }
+
+    /**
+     * Initialize the manual attachments section on the manual detail page.
+     *
+     * Responsibilities:
+     *  - Handle file uploads via AJAX when the user submits the attachment form.
+     *  - Display the list of current attachments with links to download and delete.
+     *  - Provide feedback during the upload process and handle errors.
+     */
+    function initManualAttachments() {
+        const form = document.getElementById('attachmentUploadForm');
+        const list = document.getElementById('attachmentsList');
+        const emptyState = document.getElementById('attachments-empty');
+
+        if (!form || !list) {
+            return;
+        }
+
+        const fileInput = form.querySelector('input[type="file"]');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const deleteTemplate = form.dataset.deleteTemplate || '';
+
+        function setBusy(isBusy) {
+            if (!submitBtn) return;
+            submitBtn.disabled = isBusy;
+            submitBtn.classList.toggle('disabled', isBusy);
+            submitBtn.textContent = isBusy ? 'Uploading…' : 'Upload';
+        }
+
+        function toggleEmptyState() {
+            if (emptyState) {
+                emptyState.classList[list.children.length ? 'add' : 'remove']('d-none');
+            }
+            list.classList.remove('d-none');
+        }
+
+        function createDeleteForm(attachmentId) {
+            if (!deleteTemplate) {
+                return '';
+            }
+            const action = deleteTemplate.replace('__ATT_ID__', String(attachmentId));
+            return (
+                '<form method="post" action="' + escapeHtml(action) + '" class="d-inline" onsubmit="return confirm(\'Delete this attachment?\');">' +
+                '<input type="hidden" name="attId" value="' + escapeHtml(attachmentId) + '">' +
+                '<button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>' +
+                '</form>'
+            );
+        }
+
+        function appendAttachment(attachment) {
+            if (!attachment || !attachment.id || (!attachment.file_path && !attachment.url)) {
+                return;
+            }
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.dataset.attachmentId = String(attachment.id);
+
+            const path = attachment.file_path || '';
+            const url = path ? '/' + path.replace(/^\/+/, '') : (attachment.url || '');
+            const label = path ? path.split('/').pop() || path : (url || 'attachment');
+
+            const linkHtml = url
+                ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' + escapeHtml(label) + '</a>'
+                : '<span class="text-muted">(no link)</span>';
+            const left = document.createElement('div');
+            left.innerHTML = linkHtml;
+
+            const right = document.createElement('div');
+            right.innerHTML = createDeleteForm(attachment.id);
+
+            li.appendChild(left);
+            if (right.innerHTML.trim() !== '') {
+                li.appendChild(right);
+            }
+
+            list.appendChild(li);
+            toggleEmptyState();
+        }
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                alert('Please choose a file to upload.');
+                return;
+            }
+
+            const formData = new FormData(form);
+            setBusy(true);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+                .then(function (response) {
+                    return response.json().catch(function () {
+                        throw new Error('Upload failed.');
+                    });
+                })
+                .then(function (payload) {
+                    if (!payload || payload.ok !== true) {
+                        const message = (payload && payload.message) || 'Upload failed.';
+                        const fieldMsg = payload && payload.fields && payload.fields.file ? payload.fields.file.join(' ') : '';
+                        throw new Error(fieldMsg || message);
+                    }
+                    appendAttachment(payload.attachment || {});
+                    if (fileInput) {
+                        fileInput.value = '';
+                    }
+                })
+                .catch(function (error) {
+                    alert(error.message || 'Upload failed.');
+                })
+                .finally(function () {
+                    setBusy(false);
+                });
+        });
+    }
+
+    /**
+     * Initialize AJAX-based transaction status actions on the Treasury index page.
+     *
+     * Responsibilities:
+     *  - Handle clicks on "Approve" and "Reject" buttons for transactions.
+     *  - Send the new status to the server via AJAX.
+     *  - Update the transaction card to reflect the new status.
+     *  - Remove the action buttons after approval/rejection to prevent duplicates.
+     */
+    function initTransactionStatusActions() {
+        const anyButton = document.querySelector('.js-tx-approve, .js-tx-reject');
+        if (!anyButton) {
+            return;
+        }
+
+        function setBusy(buttons, busy) {
+            buttons.forEach(function (btn) {
+                if (!btn) return;
+                btn.disabled = busy;
+                btn.classList.toggle('disabled', busy);
+            });
+        }
+
+        function updateHeroBalances(balance, pending) {
+            const approvedEl = document.getElementById('treasury-balance-approved');
+            const pendingEl = document.getElementById('treasury-balance-pending');
+            if (approvedEl && typeof balance === 'number') {
+                approvedEl.textContent = balance.toFixed(2).replace('.', ',') + ' €';
+            }
+            if (pendingEl && typeof pending === 'number') {
+                pendingEl.textContent = pending.toFixed(2).replace('.', ',') + ' €';
+            }
+        }
+
+        function updateBadge(id, status) {
+            const badge = document.querySelector('.js-tx-status[data-id="' + id + '"]');
+            if (!badge) return;
+
+            badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            badge.classList.remove('treasury-status--pending', 'treasury-status--approved', 'treasury-status--rejected');
+            badge.classList.add('treasury-status--' + status);
+
+            const card = badge.closest('.treasury-card') || badge.closest('tr');
+            if (card) {
+                card.dataset.status = status;
+                const approveBtn = card.querySelector('.js-tx-approve');
+                const rejectBtn = card.querySelector('.js-tx-reject');
+                if (approveBtn) approveBtn.remove();
+                if (rejectBtn) rejectBtn.remove();
+            }
+        }
+
+        function sendStatus(id, status, buttons) {
+            setBusy(buttons, true);
+            const url = '?c=treasury&a=setStatusJson&id=' + encodeURIComponent(id);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({ status: status }).toString()
+            })
+                .then(function (response) {
+                    return response.json().catch(function () {
+                        throw new Error('Invalid server response.');
+                    }).then(function (payload) {
+                        return { status: response.status, payload: payload };
+                    });
+                })
+                .then(function (result) {
+                    if (!result.payload || result.payload.ok !== true) {
+                        const message = (result.payload && result.payload.message) || 'Unable to update status.';
+                        throw new Error(message);
+                    }
+                    updateBadge(id, result.payload.status);
+                    if (typeof result.payload.balance === 'number' || typeof result.payload.pending === 'number') {
+                        updateHeroBalances(result.payload.balance, result.payload.pending);
+                    }
+                    renderFlash('Status updated to ' + result.payload.status + '.', 'alert-success');
+                })
+                .catch(function (error) {
+                    renderFlash(error.message || 'Unable to update status.', 'alert-danger');
+                })
+                .finally(function () {
+                    setBusy(buttons, false);
+                });
+        }
+
+        function handleClick(button) {
+            if (!button) {
+                return;
+            }
+            const id = button.dataset.id;
+            if (!id) {
+                return;
+            }
+            const status = button.classList.contains('js-tx-approve') ? 'approved' : 'rejected';
+            const container = button.closest('.treasury-card') || button.closest('tr');
+            const approveBtn = container ? container.querySelector('.js-tx-approve') : null;
+            const rejectBtn = container ? container.querySelector('.js-tx-reject') : null;
+            sendStatus(id, status, [approveBtn, rejectBtn]);
+        }
+
+        document.addEventListener('click', function (event) {
+            const el = event.target instanceof Element ? event.target : event.target && event.target.parentElement;
+            if (!el) {
+                return;
+            }
+            const btn = el.closest('.js-tx-approve, .js-tx-reject');
+            if (!btn) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            handleClick(btn);
+        }, true);
+
+        window.__TREASURY_AJAX_BOUND = true;
+    }
+
+    /**
+     * Initialize the profile forms validation.
+     *
+     * Responsibilities:
+     *  - Validate the profile form fields: name and email.
+     *  - Validate the password form fields: current password, new password, and confirmation.
+     *  - Mirror the server-side validation rules for a consistent user experience.
+     */
+     function initProfileForms() {
+         const profileForm = document.getElementById('profile-form');
+         const passwordForm = document.getElementById('password-form');
+
+         if (profileForm) {
+             profileForm.addEventListener('submit', function (event) {
+                 let valid = true;
+                 const name = profileForm.querySelector('#name');
+                 const email = profileForm.querySelector('#email');
+
+                 if (name) {
+                     const value = (name.value || '').trim();
+                     if (value.length < 2 || value.length > 255) {
+                         name.classList.add('is-invalid');
+                         valid = false;
+                     } else {
+                         name.classList.remove('is-invalid');
+                     }
+                 }
+
+                 if (email) {
+                     const value = (email.value || '').trim();
+                     const emailOk = value !== '' && value.length <= 255 && /.+@.+\..+/.test(value);
+                     if (!emailOk) {
+                         email.classList.add('is-invalid');
+                         valid = false;
+                     } else {
+                         email.classList.remove('is-invalid');
+                     }
+                 }
+
+                 if (!valid) {
+                     event.preventDefault();
+                     event.stopPropagation();
+                     profileForm.classList.add('was-validated');
+                 }
+             });
+         }
+
+         if (passwordForm) {
+             passwordForm.addEventListener('submit', function (event) {
+                 let valid = true;
+                 const current = passwordForm.querySelector('#current_password');
+                 const next = passwordForm.querySelector('#new_password');
+                 const confirm = passwordForm.querySelector('#new_password_confirm');
+
+                 if (current && current.value.trim() === '') {
+                     current.classList.add('is-invalid');
+                     valid = false;
+                 } else if (current) {
+                     current.classList.remove('is-invalid');
+                 }
+
+                 if (next) {
+                     const value = next.value || '';
+                     if (value.length < 8) {
+                         next.classList.add('is-invalid');
+                         valid = false;
+                     } else {
+                         next.classList.remove('is-invalid');
+                     }
+                 }
+
+                 if (confirm) {
+                     if (confirm.value !== (next ? next.value : '')) {
+                         confirm.classList.add('is-invalid');
+                         valid = false;
+                     } else if (confirm.value.length < 8) {
+                         confirm.classList.add('is-invalid');
+                         valid = false;
+                     } else {
+                         confirm.classList.remove('is-invalid');
+                     }
+                 }
+
+                 if (!valid) {
+                     event.preventDefault();
+                     event.stopPropagation();
+                     passwordForm.classList.add('was-validated');
+                 }
+             });
+         }
+     }
+
+    function initRegisterForm() {
+        const form = document.getElementById('auth-register')?.querySelector('form');
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener('submit', function (event) {
+            let valid = true;
+            const name = form.querySelector('#name');
+            const email = form.querySelector('#email');
+            const password = form.querySelector('#password');
+            const confirm = form.querySelector('#password_confirm');
+
+            const emailPattern = /.+@.+\..+/;
+
+            if (name) {
+                const value = (name.value || '').trim();
+                if (value.length < 2 || value.length > 255) {
+                    name.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    name.classList.remove('is-invalid');
+                }
+            }
+
+            if (email) {
+                const value = (email.value || '').trim();
+                if (!value || value.length > 255 || !emailPattern.test(value)) {
+                    email.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    email.classList.remove('is-invalid');
+                }
+            }
+
+            if (password) {
+                if ((password.value || '').length < 8) {
+                    password.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    password.classList.remove('is-invalid');
+                }
+            }
+
+            if (confirm) {
+                if ((confirm.value || '').length < 8 || confirm.value !== (password ? password.value : '')) {
+                    confirm.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    confirm.classList.remove('is-invalid');
+                }
+            }
+
+            if (!valid) {
+                event.preventDefault();
+                event.stopPropagation();
+                form.classList.add('was-validated');
+            }
+        });
+    }
+
+    /**
      * Entrypoint: once the DOM is ready we attach all behaviour needed for
      * the Treasury-related pages. Each initializer is defensive and will
      * simply exit if the expected DOM elements are missing, so calling them
@@ -439,5 +889,47 @@
         initTreasuryForm();
         initTransactionsFilter();
         initTreasuryRefresh();
+        initManualAttachments();
+        initTransactionStatusActions();
+        initProfileForms();
+        initRegisterForm();
+    });
+ })();
+
+// AI-GENERATED: Match server-side activity timestamp format (GitHub Copilot / ChatGPT), 2026-01-20
+(function formatActivityTimes() {
+    var nodes = document.querySelectorAll('.js-iso-time');
+    if (!nodes.length || typeof Intl === 'undefined' || !Intl.DateTimeFormat) return;
+    var formatter = new Intl.DateTimeFormat(undefined, {
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+    nodes.forEach(function (el) {
+        var raw = el.textContent && el.textContent.trim();
+        if (!raw) return;
+        var date = new Date(raw);
+        if (isNaN(date.getTime())) return;
+        var formatted = formatter.format(date);
+        // Ensure format: d. m. Y, HH:MM (strip locale commas, normalize separators)
+        formatted = formatted.replace(/\s*,\s*/g, ' ');
+        var parts = formatted.split(/[\.\/]\s*/).join('. ').replace(/\s+/g, ' ').trim();
+        // If DateTimeFormat already yields expected style, prefer it; otherwise fallback to manual compose
+        if (/^\d{1,2}\.\s\d{1,2}\.\s\d{4}\s\d{2}:\d{2}$/.test(parts)) {
+            el.textContent = parts.replace(' ', ', ');
+            return;
+        }
+        var day = String(date.getDate());
+        var month = String(date.getMonth() + 1);
+        var year = String(date.getFullYear());
+        var hours = String(date.getHours()).padStart(2, '0');
+        var minutes = String(date.getMinutes()).padStart(2, '0');
+        el.textContent = day + '. ' + month + '. ' + year + ', ' + hours + ':' + minutes;
     });
 })();
+
+
+

@@ -1,4 +1,5 @@
 <?php
+// AI-GENERATED: Treasury repository user joins for display names (GitHub Copilot / ChatGPT), 2026-01-20
 
 namespace App\Repositories;
 
@@ -45,7 +46,13 @@ class TransactionRepository
      */
     public function findAll(): array
     {
-        $sql = 'SELECT * FROM transactions ORDER BY created_at DESC';
+        $sql = 'SELECT t.*, '
+            . 'u_created.name AS created_by_name, u_created.email AS created_by_email, '
+            . 'u_approved.name AS approved_by_name, u_approved.email AS approved_by_email '
+            . 'FROM transactions t '
+            . 'LEFT JOIN users u_created ON u_created.id = t.created_by '
+            . 'LEFT JOIN users u_approved ON u_approved.id = t.approved_by '
+            . 'ORDER BY t.created_at DESC';
 
         $stmt = $this->pdo->query($sql);
 
@@ -67,26 +74,30 @@ class TransactionRepository
      * used by {@see getBalance()} to determine whether the amount
      * increases or decreases the treasury.
      *
+     * @param int         $cashboxId   Cashbox identifier.
      * @param string      $type        Transaction type (e.g. "deposit", "withdrawal").
      * @param float       $amount      Positive monetary amount of the transaction.
      * @param string      $description Human‑readable description or note.
      * @param string      $status      Workflow status (e.g. "pending", "approved").
-     * @param string|null $proposedBy  Optional identifier of the user who proposed it.
+     * @param int|null    $createdBy   Optional identifier of the user who created it.
+     * @param int|null    $approvedBy  Optional identifier of the user who approved it.
      *
      * @return int The auto‑generated ID of the newly created transaction.
      */
-    public function create(string $type, float $amount, string $description, string $status = 'pending', ?string $proposedBy = null): int
+    public function create(int $cashboxId, string $type, float $amount, string $description, string $status = 'pending', ?int $createdBy = null, ?int $approvedBy = null): int
     {
-        $sql = 'INSERT INTO transactions (type, amount, description, status, proposed_by, created_at)' .
-            ' VALUES (:type, :amount, :description, :status, :proposed_by, NOW())';
+        $sql = 'INSERT INTO transactions (cashbox_id, type, amount, description, status, created_by, approved_by, created_at, approved_at)' .
+            ' VALUES (:cashbox_id, :type, :amount, :description, :status, :created_by, :approved_by, NOW(), NULL)';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
+            'cashbox_id' => $cashboxId,
             'type' => $type,
             'amount' => $amount,
             'description' => $description,
             'status' => $status,
-            'proposed_by' => $proposedBy,
+            'created_by' => $createdBy,
+            'approved_by' => $approvedBy,
         ]);
 
         return (int)$this->pdo->lastInsertId();
@@ -107,11 +118,19 @@ class TransactionRepository
      */
     public function getBalance(): float
     {
-        $sql = "SELECT COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END), 0) AS balance FROM transactions";
+        $sql = "SELECT COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END), 0) AS balance FROM transactions WHERE status = 'approved'";
         $stmt = $this->pdo->query($sql);
         $row = $stmt->fetch();
 
         return isset($row['balance']) ? (float)$row['balance'] : 0.0;
+    }
+
+    public function getPendingTotal(): float
+    {
+        $stmt = $this->pdo->query("SELECT COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount ELSE -amount END), 0) AS pending_balance FROM transactions WHERE status = 'pending'");
+        $row = $stmt->fetch();
+
+        return isset($row['pending_balance']) ? (float)$row['pending_balance'] : 0.0;
     }
 
     /**
@@ -125,7 +144,15 @@ class TransactionRepository
      */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM transactions WHERE id = :id');
+        $stmt = $this->pdo->prepare(
+            'SELECT t.*, '
+            . 'u_created.name AS created_by_name, u_created.email AS created_by_email, '
+            . 'u_approved.name AS approved_by_name, u_approved.email AS approved_by_email '
+            . 'FROM transactions t '
+            . 'LEFT JOIN users u_created ON u_created.id = t.created_by '
+            . 'LEFT JOIN users u_approved ON u_approved.id = t.approved_by '
+            . 'WHERE t.id = :id'
+        );
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
 
@@ -167,5 +194,45 @@ class TransactionRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM transactions WHERE id = :id');
         $stmt->execute(['id' => $id]);
+    }
+
+    /**
+     * Ensure at least one cashbox exists and return its id.
+     */
+    public function ensureDefaultCashboxId(): int
+    {
+        $existing = $this->pdo->query('SELECT id FROM cashboxes ORDER BY id ASC LIMIT 1');
+        $id = $existing?->fetchColumn();
+        if ($id !== false && $id !== null) {
+            return (int)$id;
+        }
+
+        $stmt = $this->pdo->prepare('INSERT INTO cashboxes (name, start_date, initial_balance) VALUES (:name, CURDATE(), 0)');
+        $stmt->execute(['name' => 'Default cashbox']);
+
+        return (int)$this->pdo->lastInsertId();
+    }
+
+    /**
+     * Update the status of a transaction.
+     *
+     * This method changes the `status` and optionally the `approved_by` fields
+     * of a transaction identified by its ID. It also sets the `approved_at` field
+     * to the current timestamp.
+     *
+     * @param int $id ID of the transaction whose status is to be updated.
+     * @param string $status New status value.
+     * @param int|null $approvedBy Optional ID of the user approving the transaction.
+     */
+    public function setStatus(int $id, string $status, ?int $approvedBy = null): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE transactions SET status = :status, approved_by = :approved_by, approved_at = NOW() WHERE id = :id'
+        );
+        $stmt->execute([
+            'status' => $status,
+            'approved_by' => $approvedBy,
+            'id' => $id,
+        ]);
     }
 }

@@ -1,10 +1,16 @@
 <?php
+// AI-GENERATED: Home dashboard activity feed update (GitHub Copilot / ChatGPT), 2026-01-20
 
 namespace App\Controllers;
+
+require_once __DIR__ . '/../../Framework/ClassLoader.php';
 
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use App\Repositories\ActivityRepository;
+use App\Repositories\NewsRepository;
+use App\Repositories\UserRepository;
 
 /**
  * Class HomeController
@@ -39,8 +45,16 @@ class HomeController extends BaseController
      */
     public function index(Request $request): Response
     {
+        $activities = (new ActivityRepository())->latest(10);
+
+        if (empty($activities)) {
+            $fallbackNews = (new NewsRepository())->latest(10);
+            $activities = $this->mapNewsToActivities($fallbackNews);
+        }
+
         return $this->html([
             'activeModule' => 'home',
+            'activities' => $activities,
         ]);
     }
 
@@ -57,5 +71,50 @@ class HomeController extends BaseController
         return $this->html([
             'activeModule' => 'home',
         ]);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $newsItems
+     * @return array<int,array<string,mixed>>
+     */
+    private function mapNewsToActivities(array $newsItems): array
+    {
+        $mapped = [];
+        $userRepo = new UserRepository();
+        $userCache = [];
+        foreach ($newsItems as $item) {
+            $meta = is_array($item['meta'] ?? null) ? $item['meta'] : [];
+            $userId = isset($meta['user']) && is_numeric($meta['user']) ? (int)$meta['user'] : null;
+            $actorName = 'System';
+            $actorEmail = null;
+            if ($userId !== null) {
+                if (!array_key_exists($userId, $userCache)) {
+                    $userCache[$userId] = $userRepo->findById($userId) ?: null;
+                }
+                $userRow = $userCache[$userId];
+                if ($userRow !== null) {
+                    $actorName = (string)($userRow['name'] ?? 'Unknown user');
+                    $actorEmail = (string)($userRow['email'] ?? null);
+                } else {
+                    $actorName = 'Unknown user';
+                }
+            }
+
+            $metaForDetails = $meta;
+            if ($userId !== null && array_key_exists('user', $metaForDetails)) {
+                unset($metaForDetails['user']);
+            }
+
+            $mapped[] = [
+                'title' => (string)($item['message'] ?? ''),
+                'action' => (string)($item['type'] ?? ''),
+                'details' => !empty($metaForDetails) ? json_encode($metaForDetails, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
+                'actor_name' => $actorName,
+                'actor_email' => $actorEmail,
+                'created_at' => (string)($item['ts'] ?? null),
+                'user_id' => $userId,
+            ];
+        }
+        return $mapped;
     }
 }
