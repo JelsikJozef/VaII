@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Treasury AJAX status controls (GitHub Copilot / ChatGPT), 2026-01-19
+// AI-GENERATED: Treasury cards show creator/approver names (GitHub Copilot / ChatGPT), 2026-01-20
 
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
@@ -22,6 +22,18 @@ $canManageTx = static function (array $tx) use ($canModerate, $currentUserId): b
     $ownerId = (int)($tx['created_by'] ?? 0);
     $status = strtolower((string)($tx['status'] ?? ''));
     return ($ownerId > 0 && $currentUserId !== null && (int)$currentUserId === $ownerId && $status === 'pending');
+};
+
+$formatUser = static function (array $tx, string $nameKey, string $emailKey): string {
+    $name = trim((string)($tx[$nameKey] ?? ''));
+    $email = trim((string)($tx[$emailKey] ?? ''));
+    if ($name !== '') {
+        return $name;
+    }
+    if ($email !== '') {
+        return $email;
+    }
+    return 'Unknown user';
 };
 
 $formatAmount = static function ($amount, string $type): string {
@@ -100,9 +112,15 @@ $typeMap = [
                     $typeData = $typeMap[$type] ?? $typeMap['deposit'];
                     $statusData = $statusMap[$status] ?? $statusMap['pending'];
                     $title = trim((string)($tx['title'] ?? $tx['description'] ?? 'Untitled transaction'));
-                    $proposedBy = trim((string)($tx['created_by'] ?? ''));
-                    $proposedBy = $proposedBy !== '' ? 'User #' . $proposedBy : 'Unspecified member';
                     $createdAt = $formatDateTime($tx['created_at'] ?? null);
+                    $proposedBy = $formatUser($tx, 'created_by_name', 'created_by_email');
+                    $approvedLabel = null;
+                    $approvedByRaw = $tx['approved_by'] ?? null;
+                    if ($approvedByRaw === null) {
+                        $approvedLabel = 'Not approved yet';
+                    } else {
+                        $approvedLabel = 'Approved by ' . $formatUser($tx, 'approved_by_name', 'approved_by_email');
+                    }
                     $editUrl = $link->url('Treasury.edit', ['id' => $tx['id'] ?? 0]);
                     $deleteUrl = $link->url('Treasury.delete', ['id' => $tx['id'] ?? 0]);
                 ?>
@@ -117,6 +135,7 @@ $typeMap = [
                     </header>
                     <h3 class="treasury-card__title"><?= htmlspecialchars($title, ENT_QUOTES) ?></h3>
                     <p class="treasury-card__meta">Proposed by <?= htmlspecialchars($proposedBy, ENT_QUOTES) ?></p>
+                    <p class="treasury-card__meta text-muted mb-1"><?= htmlspecialchars($approvedLabel, ENT_QUOTES) ?></p>
                     <footer class="treasury-card__footer">
                         <span class="treasury-card__date"><?= htmlspecialchars($createdAt, ENT_QUOTES) ?></span>
                         <span class="treasury-status <?= $statusData[1] ?> js-tx-status" data-id="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">

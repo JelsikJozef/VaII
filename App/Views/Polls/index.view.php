@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Polls listing view (GitHub Copilot / ChatGPT), 2026-01-19
+// AI-GENERATED: Polls listing shows creator names (GitHub Copilot / ChatGPT), 2026-01-20
 
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
@@ -10,6 +10,18 @@ $view->setLayout('root');
 
 $polls = $polls ?? [];
 $canManage = !empty($canManage);
+
+$formatUser = static function (array $row): string {
+    $name = trim((string)($row['created_by_name'] ?? ''));
+    $email = trim((string)($row['created_by_email'] ?? ''));
+    if ($name !== '') {
+        return $name;
+    }
+    if ($email !== '') {
+        return $email;
+    }
+    return 'Unknown user';
+};
 
 $statusClasses = [
     1 => 'bg-success-subtle text-success border-success-subtle',
@@ -36,6 +48,7 @@ $statusClasses = [
                  $question = (string)($poll['question'] ?? '');
                 // AI-GENERATED: Unified poll timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
                  $createdAt = $formatDateTime($poll['created_at'] ?? null);
+                 $creator = $formatUser($poll);
             ?>
             <div class="list-group-item d-flex justify-content-between align-items-start">
                 <div>
@@ -44,7 +57,7 @@ $statusClasses = [
                             <?= htmlspecialchars($question, ENT_QUOTES) ?>
                         </a>
                     </h2>
-                    <div class="small text-muted">Created at <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
+                    <div class="small text-muted">Created by <?= htmlspecialchars($creator, ENT_QUOTES) ?> • <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
                 </div>
                 <div class="text-end ms-3">
                     <span class="badge rounded-pill border <?= $badgeClass ?>">

@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Poll detail and voting view (GitHub Copilot / ChatGPT), 2026-01-19
+// AI-GENERATED: Poll detail shows creator names (GitHub Copilot / ChatGPT), 2026-01-20
 
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
@@ -21,15 +21,20 @@ $selectedOptionId = (int)($selectedOptionId ?? 0);
 $hasVoted = !empty($hasVoted);
 $canManage = !empty($canManage);
 
-$getFieldError = static function (array $errs, string $field): string {
-    return isset($errs[$field][0]) ? (string)$errs[$field][0] : '';
+$formatUser = static function (array $poll): string {
+    $name = trim((string)($poll['created_by_name'] ?? ''));
+    $email = trim((string)($poll['created_by_email'] ?? ''));
+    if ($name !== '') {
+        return $name;
+    }
+    if ($email !== '') {
+        return $email;
+    }
+    return 'Unknown user';
 };
 
 $status = (int)($poll['is_active'] ?? 0);
-$statusClasses = [
-    1 => 'bg-success-subtle text-success border-success-subtle',
-    0 => 'bg-danger-subtle text-danger border-danger-subtle',
-];
+$creator = $formatUser($poll);
 // AI-GENERATED: Unified poll detail timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
 $createdAt = $formatDateTime($poll['created_at'] ?? null);
 ?>
@@ -43,7 +48,7 @@ $createdAt = $formatDateTime($poll['created_at'] ?? null);
                     <?= $status === 1 ? 'Open' : 'Closed' ?>
                 </span>
             </div>
-            <div class="small text-muted">Created at <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
+            <div class="small text-muted">Created by <?= htmlspecialchars($creator, ENT_QUOTES) ?> • <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
         </div>
         <a href="<?= $link->url('Polls.index') ?>" class="btn btn-outline-secondary">Back</a>
     </div>

@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Manual detail view (GitHub Copilot / ChatGPT), 2026-01-18
+// AI-GENERATED: Manual detail shows author names (GitHub Copilot / ChatGPT), 2026-01-20
 
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
@@ -18,10 +18,23 @@ $title = (string)($article['title'] ?? 'Untitled');
 $category = (string)($article['category'] ?? '');
 $difficulty = (string)($article['difficulty'] ?? '');
 $content = (string)($article['content'] ?? '');
-// AI-GENERATED: Unified manual detail timestamps (GitHub Copilot / ChatGPT), 2026-01-20
 $createdAt = $formatDateTime($article['created_at'] ?? null);
 $updatedAt = $formatDateTime($article['updated_at'] ?? null);
 $articleId = (int)($article['id'] ?? 0);
+
+$formatUser = static function (array $row, string $nameKey, string $emailKey): string {
+    $name = trim((string)($row[$nameKey] ?? ''));
+    $email = trim((string)($row[$emailKey] ?? ''));
+    if ($name !== '') {
+        return $name;
+    }
+    if ($email !== '') {
+        return $email;
+    }
+    return 'Unknown user';
+};
+$creator = $formatUser($article, 'created_by_name', 'created_by_email');
+$updater = $formatUser($article, 'updated_by_name', 'updated_by_email');
 
 $difficultyLabels = [
     'easy' => 'Easy',
@@ -37,9 +50,9 @@ $difficultyLabels = [
             <p class="text-muted mb-1">Knowledge Base</p>
             <h1 class="h3 mb-0"><?= htmlspecialchars($title, ENT_QUOTES) ?></h1>
             <div class="text-muted small">
-                Created <?= htmlspecialchars($createdAt, ENT_QUOTES) ?>
+                Created by <?= htmlspecialchars($creator, ENT_QUOTES) ?> <?= htmlspecialchars($createdAt, ENT_QUOTES) ?>
                 <?php if ($updatedAt !== '—' && $updatedAt !== $createdAt): ?>
-                    · Updated <?= htmlspecialchars($updatedAt, ENT_QUOTES) ?>
+                    · Updated by <?= htmlspecialchars($updater, ENT_QUOTES) ?> <?= htmlspecialchars($updatedAt, ENT_QUOTES) ?>
                 <?php endif; ?>
             </div>
         </div>

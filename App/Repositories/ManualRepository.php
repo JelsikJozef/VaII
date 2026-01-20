@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Knowledge base articles repository (GitHub Copilot / ChatGPT), 2026-01-18
+// AI-GENERATED: Manual repository user joins for author display (GitHub Copilot / ChatGPT), 2026-01-20
 
 namespace App\Repositories;
 
@@ -21,27 +21,33 @@ class ManualRepository
      */
     public function findAllArticles(?string $q = null, ?string $category = null, ?string $difficulty = null): array
     {
-        $sql = 'SELECT * FROM knowledge_articles WHERE 1=1';
+        $sql = 'SELECT ka.*, '
+            . 'u_created.name AS created_by_name, u_created.email AS created_by_email, '
+            . 'u_updated.name AS updated_by_name, u_updated.email AS updated_by_email '
+            . 'FROM knowledge_articles ka '
+            . 'LEFT JOIN users u_created ON u_created.id = COALESCE(ka.created_by, ka.created_by_user_id) '
+            . 'LEFT JOIN users u_updated ON u_updated.id = COALESCE(ka.updated_by, ka.updated_by_user_id) '
+            . 'WHERE 1=1';
         $params = [];
 
         if ($q !== null && trim($q) !== '') {
-            $sql .= ' AND (LOWER(title) LIKE :q OR LOWER(content) LIKE :q_content)';
+            $sql .= ' AND (LOWER(ka.title) LIKE :q OR LOWER(ka.content) LIKE :q_content)';
             $needle = '%' . strtolower(trim($q)) . '%';
             $params['q'] = $needle;
             $params['q_content'] = $needle;
         }
 
         if ($category !== null && trim($category) !== '') {
-            $sql .= ' AND LOWER(category) LIKE :category';
+            $sql .= ' AND LOWER(ka.category) LIKE :category';
             $params['category'] = '%' . strtolower(trim($category)) . '%';
         }
 
         if ($difficulty !== null && trim($difficulty) !== '') {
-            $sql .= ' AND LOWER(difficulty) = :difficulty';
+            $sql .= ' AND LOWER(ka.difficulty) = :difficulty';
             $params['difficulty'] = strtolower(trim($difficulty));
         }
 
-        $sql .= ' ORDER BY created_at DESC';
+        $sql .= ' ORDER BY ka.created_at DESC';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -56,7 +62,15 @@ class ManualRepository
      */
     public function findArticleById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM knowledge_articles WHERE id = :id');
+        $stmt = $this->pdo->prepare(
+            'SELECT ka.*, '
+            . 'u_created.name AS created_by_name, u_created.email AS created_by_email, '
+            . 'u_updated.name AS updated_by_name, u_updated.email AS updated_by_email '
+            . 'FROM knowledge_articles ka '
+            . 'LEFT JOIN users u_created ON u_created.id = COALESCE(ka.created_by, ka.created_by_user_id) '
+            . 'LEFT JOIN users u_updated ON u_updated.id = COALESCE(ka.updated_by, ka.updated_by_user_id) '
+            . 'WHERE ka.id = :id'
+        );
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
 

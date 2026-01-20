@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Polls persistence layer (GitHub Copilot / ChatGPT), 2026-01-19
+// AI-GENERATED: Polls repository user joins for creator names (GitHub Copilot / ChatGPT), 2026-01-20
 
 namespace App\Repositories;
 
@@ -18,7 +18,13 @@ class PollsRepository
 
     public function findAll(): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, question, is_active, created_by AS created_by_user_id, created_at FROM polls ORDER BY created_at DESC');
+        $stmt = $this->pdo->prepare(
+            'SELECT p.id, p.question, p.is_active, p.created_by AS created_by_user_id, p.created_at, '
+            . 'u_created.name AS created_by_name, u_created.email AS created_by_email '
+            . 'FROM polls p '
+            . 'LEFT JOIN users u_created ON u_created.id = p.created_by '
+            . 'ORDER BY p.created_at DESC'
+        );
         $stmt->execute();
 
         $rows = $stmt->fetchAll();
@@ -28,7 +34,13 @@ class PollsRepository
 
     public function findPollById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, question, is_active, created_by AS created_by_user_id, created_at FROM polls WHERE id = :id');
+        $stmt = $this->pdo->prepare(
+            'SELECT p.id, p.question, p.is_active, p.created_by AS created_by_user_id, p.created_at, '
+            . 'u_created.name AS created_by_name, u_created.email AS created_by_email '
+            . 'FROM polls p '
+            . 'LEFT JOIN users u_created ON u_created.id = p.created_by '
+            . 'WHERE p.id = :id'
+        );
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
 

@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Dashboard layout refresh for Modules page (GitHub Copilot / ChatGPT), 2026-01-19
+// AI-GENERATED: Dashboard activity actor names fallback (GitHub Copilot / ChatGPT), 2026-01-20
 
 /** @var \Framework\Support\LinkGenerator $link */
 ?>
@@ -101,7 +101,16 @@
                                 }
                                 $actorName = trim((string)($item['actor_name'] ?? ''));
                                 $actorEmail = trim((string)($item['actor_email'] ?? ''));
-                                $actor = $actorName !== '' ? $actorName : ($actorEmail !== '' ? $actorEmail : 'System');
+                                $userId = $item['user_id'] ?? null;
+                                if ($actorName !== '') {
+                                    $actor = $actorName;
+                                } elseif ($actorEmail !== '') {
+                                    $actor = $actorEmail;
+                                } elseif ($userId === null) {
+                                    $actor = 'System';
+                                } else {
+                                    $actor = 'Unknown user';
+                                }
                                 $timestamp = $formatDateTime($item['created_at'] ?? null);
                                 $detailsRaw = (string)($item['details'] ?? '');
                                 $detailsText = '';
@@ -110,6 +119,10 @@
                                     if (is_array($decoded) && !empty($decoded)) {
                                         $pairs = [];
                                         foreach ($decoded as $k => $v) {
+                                            if (in_array($k, ['user', 'created_by', 'approved_by', 'updated_by'], true)) {
+                                                $pairs[] = $k . ': ' . 'Unknown user';
+                                                continue;
+                                            }
                                             $pairs[] = $k . ': ' . (is_scalar($v) ? (string)$v : json_encode($v));
                                         }
                                         $detailsText = implode(', ', $pairs);

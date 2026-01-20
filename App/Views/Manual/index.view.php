@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Manual index view (GitHub Copilot / ChatGPT), 2026-01-18
+// AI-GENERATED: Manual list shows author names (GitHub Copilot / ChatGPT), 2026-01-20
 
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
@@ -18,6 +18,18 @@ $q = $q ?? '';
 $category = $category ?? '';
 $difficulty = $difficulty ?? '';
 $canManage = $canManage ?? false;
+
+$formatUser = static function (array $row): string {
+    $name = trim((string)($row['created_by_name'] ?? ''));
+    $email = trim((string)($row['created_by_email'] ?? ''));
+    if ($name !== '') {
+        return $name;
+    }
+    if ($email !== '') {
+        return $email;
+    }
+    return 'Unknown user';
+};
 
 $difficultyLabels = [
     'easy' => 'Easy',
@@ -95,12 +107,14 @@ $difficultyLabels = [
                      $cat = (string)($article['category'] ?? '');
                      $diff = (string)($article['difficulty'] ?? '');
                      $createdAt = $formatDateTime($article['created_at'] ?? null);
+                     $creator = $formatUser($article);
                 ?>
                     <tr>
                         <td>
                             <a href="<?= $link->url('Manual.show', ['id' => $id]) ?>">
                                 <?= htmlspecialchars($title, ENT_QUOTES) ?>
                             </a>
+                            <div class="text-muted small">By <?= htmlspecialchars($creator, ENT_QUOTES) ?> • <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
                         </td>
                         <td><?= htmlspecialchars($cat !== '' ? $cat : '—', ENT_QUOTES) ?></td>
                         <td>
@@ -112,7 +126,6 @@ $difficultyLabels = [
                                 <span class="text-muted">n/a</span>
                             <?php endif; ?>
                         </td>
-                        <td><?= htmlspecialchars($createdAt, ENT_QUOTES) ?></td>
                         <?php if ($canManage): ?>
                             <td class="text-end">
                                 <a href="<?= $link->url('Manual.edit', ['id' => $id]) ?>" class="btn btn-sm btn-outline-primary me-2">Edit</a>

@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Treasury status update helper (GitHub Copilot / ChatGPT), 2026-01-19
+// AI-GENERATED: Treasury repository user joins for display names (GitHub Copilot / ChatGPT), 2026-01-20
 
 namespace App\Repositories;
 
@@ -46,7 +46,13 @@ class TransactionRepository
      */
     public function findAll(): array
     {
-        $sql = 'SELECT * FROM transactions ORDER BY created_at DESC';
+        $sql = 'SELECT t.*, '
+            . 'u_created.name AS created_by_name, u_created.email AS created_by_email, '
+            . 'u_approved.name AS approved_by_name, u_approved.email AS approved_by_email '
+            . 'FROM transactions t '
+            . 'LEFT JOIN users u_created ON u_created.id = t.created_by '
+            . 'LEFT JOIN users u_approved ON u_approved.id = t.approved_by '
+            . 'ORDER BY t.created_at DESC';
 
         $stmt = $this->pdo->query($sql);
 
@@ -138,7 +144,15 @@ class TransactionRepository
      */
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM transactions WHERE id = :id');
+        $stmt = $this->pdo->prepare(
+            'SELECT t.*, '
+            . 'u_created.name AS created_by_name, u_created.email AS created_by_email, '
+            . 'u_approved.name AS approved_by_name, u_approved.email AS approved_by_email '
+            . 'FROM transactions t '
+            . 'LEFT JOIN users u_created ON u_created.id = t.created_by '
+            . 'LEFT JOIN users u_approved ON u_approved.id = t.approved_by '
+            . 'WHERE t.id = :id'
+        );
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
 
