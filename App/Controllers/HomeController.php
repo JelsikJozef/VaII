@@ -101,8 +101,8 @@ class HomeController extends BaseController
             }
 
             $metaForDetails = $meta;
-            if ($userId !== null) {
-                $metaForDetails['user'] = $actorName;
+            if ($userId !== null && array_key_exists('user', $metaForDetails)) {
+                unset($metaForDetails['user']);
             }
 
             $mapped[] = [
