@@ -18,6 +18,7 @@ $title = (string)($article['title'] ?? 'Untitled');
 $category = (string)($article['category'] ?? '');
 $difficulty = (string)($article['difficulty'] ?? '');
 $content = (string)($article['content'] ?? '');
+$contentHtml = (string)($article['content_html'] ?? '');
 $createdAt = $formatDateTime($article['created_at'] ?? null);
 $updatedAt = $formatDateTime($article['updated_at'] ?? null);
 $articleId = (int)($article['id'] ?? 0);
@@ -85,8 +86,8 @@ $difficultyLabels = [
     </div>
 
     <article class="card card-body mb-4">
-        <div class="manual-content">
-            <?= nl2br(htmlspecialchars($content, ENT_QUOTES)) ?>
+        <div class="markdown-body">
+            <?= $contentHtml ?>
         </div>
     </article>
 

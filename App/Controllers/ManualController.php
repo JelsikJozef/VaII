@@ -6,6 +6,7 @@ namespace App\Controllers;
 require_once __DIR__ . '/../../Framework/ClassLoader.php';
 
 use App\Repositories\ManualRepository;
+use App\Services\MarkdownRenderer;
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
@@ -16,6 +17,7 @@ class ManualController extends BaseController
 {
     private ?ManualRepository $repository = null;
     private ?Session $flashSession = null;
+    private ?MarkdownRenderer $markdown = null;
 
     public function authorize(Request $request, string $action): bool
     {
@@ -40,6 +42,15 @@ class ManualController extends BaseController
             $category !== '' ? $category : null,
             $difficulty !== '' ? $difficulty : null
         );
+
+        $renderer = $this->markdownRenderer();
+        foreach ($articles as &$article) {
+            $raw = (string)($article['content'] ?? '');
+            $safeHtml = $renderer->toSafeHtml($raw);
+            $article['content_html'] = $safeHtml;
+            $article['content_plain'] = trim(strip_tags($safeHtml));
+        }
+        unset($article);
 
         return $this->html([
             'activeModule' => 'manual',
@@ -66,6 +77,9 @@ class ManualController extends BaseController
             $this->flash('manual.error', 'Article not found.');
             return $this->redirect($this->url('Manual.index'));
         }
+
+        $renderer = $this->markdownRenderer();
+        $article['content_html'] = $renderer->toSafeHtml((string)($article['content'] ?? ''));
 
         $attachments = $this->repo()->listAttachments($id);
 
@@ -408,6 +422,15 @@ class ManualController extends BaseController
         }
 
         return $this->repository;
+    }
+
+    private function markdownRenderer(): MarkdownRenderer
+    {
+        if ($this->markdown === null) {
+            $this->markdown = new MarkdownRenderer();
+        }
+
+        return $this->markdown;
     }
 
     private function sanitizeOriginalFilename(string $name): string

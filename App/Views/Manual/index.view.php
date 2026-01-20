@@ -112,8 +112,7 @@ $difficultyPill = static function (?string $diff): ?array {
                 $diff = $difficultyPill($article['difficulty'] ?? null);
                 $createdAt = $formatDateTime($article['created_at'] ?? null);
                 $creator = $formatUser($article);
-                $contentRaw = (string)($article['content'] ?? '');
-                $contentSnippet = trim(strip_tags($contentRaw));
+                $contentSnippet = trim((string)($article['content_plain'] ?? ''));
                 if (strlen($contentSnippet) > 160) {
                     $contentSnippet = substr($contentSnippet, 0, 157) . '…';
                 }

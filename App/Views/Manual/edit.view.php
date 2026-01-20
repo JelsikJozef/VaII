@@ -85,6 +85,7 @@ $getFieldError = static function (array $errs, string $field): string {
 
                 <div class="mb-3">
                     <label for="content" class="form-label">Content</label>
+                    <div class="form-text mb-1">You can use Markdown (headings, lists, links, code blocks).</div>
                     <textarea
                         id="content"
                         name="content"

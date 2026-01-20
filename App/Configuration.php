@@ -20,7 +20,7 @@ class Configuration
     /**
      * Application name.
      */
-    public const APP_NAME = 'Vaííčko MVC FW';
+    public const APP_NAME = 'ESN UNIZA Portal';
 
     /**
      * Version of the framework.
