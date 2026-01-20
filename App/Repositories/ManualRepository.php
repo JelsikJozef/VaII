@@ -25,8 +25,8 @@ class ManualRepository
             . 'u_created.name AS created_by_name, u_created.email AS created_by_email, '
             . 'u_updated.name AS updated_by_name, u_updated.email AS updated_by_email '
             . 'FROM knowledge_articles ka '
-            . 'LEFT JOIN users u_created ON u_created.id = COALESCE(ka.created_by, ka.created_by_user_id) '
-            . 'LEFT JOIN users u_updated ON u_updated.id = COALESCE(ka.updated_by, ka.updated_by_user_id) '
+            . 'LEFT JOIN users u_created ON u_created.id = ka.created_by '
+            . 'LEFT JOIN users u_updated ON u_updated.id = ka.updated_by '
             . 'WHERE 1=1';
         $params = [];
 
@@ -67,8 +67,8 @@ class ManualRepository
             . 'u_created.name AS created_by_name, u_created.email AS created_by_email, '
             . 'u_updated.name AS updated_by_name, u_updated.email AS updated_by_email '
             . 'FROM knowledge_articles ka '
-            . 'LEFT JOIN users u_created ON u_created.id = COALESCE(ka.created_by, ka.created_by_user_id) '
-            . 'LEFT JOIN users u_updated ON u_updated.id = COALESCE(ka.updated_by, ka.updated_by_user_id) '
+            . 'LEFT JOIN users u_created ON u_created.id = ka.created_by '
+            . 'LEFT JOIN users u_updated ON u_updated.id = ka.updated_by '
             . 'WHERE ka.id = :id'
         );
         $stmt->execute(['id' => $id]);

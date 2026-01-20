@@ -10,6 +10,7 @@ use Framework\Http\Request;
 use Framework\Http\Responses\Response;
 use App\Repositories\ActivityRepository;
 use App\Repositories\NewsRepository;
+use App\Repositories\UserRepository;
 
 /**
  * Class HomeController
@@ -79,14 +80,39 @@ class HomeController extends BaseController
     private function mapNewsToActivities(array $newsItems): array
     {
         $mapped = [];
+        $userRepo = new UserRepository();
+        $userCache = [];
         foreach ($newsItems as $item) {
+            $meta = is_array($item['meta'] ?? null) ? $item['meta'] : [];
+            $userId = isset($meta['user']) && is_numeric($meta['user']) ? (int)$meta['user'] : null;
+            $actorName = 'System';
+            $actorEmail = null;
+            if ($userId !== null) {
+                if (!array_key_exists($userId, $userCache)) {
+                    $userCache[$userId] = $userRepo->findById($userId) ?: null;
+                }
+                $userRow = $userCache[$userId];
+                if ($userRow !== null) {
+                    $actorName = (string)($userRow['name'] ?? 'Unknown user');
+                    $actorEmail = (string)($userRow['email'] ?? null);
+                } else {
+                    $actorName = 'Unknown user';
+                }
+            }
+
+            $metaForDetails = $meta;
+            if ($userId !== null) {
+                $metaForDetails['user'] = $actorName;
+            }
+
             $mapped[] = [
                 'title' => (string)($item['message'] ?? ''),
                 'action' => (string)($item['type'] ?? ''),
-                'details' => isset($item['meta']) ? json_encode($item['meta'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
-                'actor_name' => 'System',
-                'actor_email' => null,
+                'details' => !empty($metaForDetails) ? json_encode($metaForDetails, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
+                'actor_name' => $actorName,
+                'actor_email' => $actorEmail,
                 'created_at' => (string)($item['ts'] ?? null),
+                'user_id' => $userId,
             ];
         }
         return $mapped;

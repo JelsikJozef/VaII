@@ -120,7 +120,7 @@
                                         $pairs = [];
                                         foreach ($decoded as $k => $v) {
                                             if (in_array($k, ['user', 'created_by', 'approved_by', 'updated_by'], true)) {
-                                                $pairs[] = $k . ': ' . 'Unknown user';
+                                                $pairs[] = $k . ': ' . $actor;
                                                 continue;
                                             }
                                             $pairs[] = $k . ': ' . (is_scalar($v) ? (string)$v : json_encode($v));
