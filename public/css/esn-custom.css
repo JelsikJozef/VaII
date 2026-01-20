@@ -604,13 +604,99 @@ body {
 .esn-activity-link { font-weight: 600; font-size: 0.9rem; color: var(--esn-accent); text-decoration: none; }
 .esn-activity-link:hover { text-decoration: underline; }
 
-@media (max-width: 991px) {
-    .activity-card { position: static; top: auto; }
+/* AI-GENERATED: ESNcards/Manual card layout styles (GitHub Copilot / ChatGPT), 2026-01-20 */
+.esn-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--esn-space-4);
 }
 
-@media (max-width: 768px) {
-    .esn-page { padding: 24px 0 32px; }
-    .esn-card { box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06); }
-    .activity-card { padding: var(--esn-space-3); }
-    .activity-item, .activity-empty { padding: var(--esn-space-3); }
+.esn-record-card {
+    border: 1px solid var(--esn-border);
+    box-shadow: var(--esn-shadow);
+    border-radius: var(--esn-radius);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.esn-record-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+    border-color: #dbe4ef;
+}
+
+.esn-record-card__section {
+    min-width: 200px;
+}
+
+.esn-record-card__actions .btn {
+    white-space: nowrap;
+}
+
+.esn-card-number {
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.esn-label {
+    font-size: 0.9rem;
+    color: var(--esn-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+}
+
+.esn-filter-row .btn {
+    min-width: 90px;
+}
+
+.esn-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 1px solid transparent;
+}
+
+.esn-pill--success {
+    background: rgba(122, 193, 67, 0.15);
+    color: #4b8c1f;
+    border-color: rgba(122, 193, 67, 0.25);
+}
+
+.esn-pill--info {
+    background: rgba(0, 163, 224, 0.14);
+    color: #0b79b2;
+    border-color: rgba(0, 163, 224, 0.22);
+}
+
+.esn-pill--danger {
+    background: rgba(236, 0, 140, 0.12);
+    color: #c00073;
+    border-color: rgba(236, 0, 140, 0.2);
+}
+
+.esn-pill--neutral {
+    background: #f3f6fa;
+    color: #475569;
+    border-color: #e4e9f1;
+}
+
+.esn-pill--muted {
+    background: rgba(107, 114, 128, 0.12);
+    color: #4b5563;
+    border-color: rgba(107, 114, 128, 0.24);
+}
+
+@media (max-width: 767px) {
+    .esn-record-card__actions {
+        width: 100%;
+    }
+
+    .esn-card-grid {
+        grid-template-columns: 1fr;
+    }
 }

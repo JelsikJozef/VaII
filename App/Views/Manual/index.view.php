@@ -1,5 +1,5 @@
 <?php
-// AI-GENERATED: Manual list shows author names (GitHub Copilot / ChatGPT), 2026-01-20
+// AI-GENERATED: Manual index redesigned to card layout (GitHub Copilot / ChatGPT), 2026-01-20
 
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
@@ -28,25 +28,33 @@ $formatUser = static function (array $row): string {
     if ($email !== '') {
         return $email;
     }
-    return 'Unknown user';
+    return 'System';
 };
 
-$difficultyLabels = [
-    'easy' => 'Easy',
-    'medium' => 'Medium',
-    'hard' => 'Hard',
-];
-
+$difficultyPill = static function (?string $diff): ?array {
+    if ($diff === null || $diff === '') {
+        return null;
+    }
+    $normalized = strtolower($diff);
+    return match ($normalized) {
+        'easy' => ['Easy', 'esn-pill esn-pill--success'],
+        'medium' => ['Medium', 'esn-pill esn-pill--info'],
+        'hard' => ['Hard', 'esn-pill esn-pill--danger'],
+        default => [ucfirst($normalized), 'esn-pill esn-pill--neutral'],
+    };
+};
 ?>
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container esn-page">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3 esn-page-header">
         <div>
-            <h1 class="h3 mb-0">Knowledge Base</h1>
-            <p class="text-muted mb-0">Semester manual articles</p>
+            <h1 class="esn-title mb-1">Knowledge Base</h1>
+            <p class="esn-subtitle mb-0">Semester manual articles</p>
         </div>
         <?php if ($canManage): ?>
-            <a href="<?= $link->url('Manual.new') ?>" class="btn btn-primary">New Article</a>
+            <div class="d-flex align-items-center">
+                <a href="<?= $link->url('Manual.new') ?>" class="btn btn-primary">New Article</a>
+            </div>
         <?php endif; ?>
     </div>
 
@@ -57,88 +65,92 @@ $difficultyLabels = [
         <div class="alert alert-success"><?= htmlspecialchars($successMessage, ENT_QUOTES) ?></div>
     <?php endif; ?>
 
-    <form method="get" action="<?= $link->url('Manual.index') ?>" class="card card-body mb-3">
-        <input type="hidden" name="c" value="manual">
-        <input type="hidden" name="a" value="index">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label for="q" class="form-label">Search</label>
-                <input type="text" id="q" name="q" class="form-control" value="<?= htmlspecialchars($q, ENT_QUOTES) ?>" placeholder="Search title or content">
-            </div>
-            <div class="col-md-3">
-                <label for="category" class="form-label">Category</label>
-                <input type="text" id="category" name="category" class="form-control" value="<?= htmlspecialchars($category, ENT_QUOTES) ?>" maxlength="255">
-            </div>
-            <div class="col-md-3">
-                <label for="difficulty" class="form-label">Difficulty</label>
-                <select id="difficulty" name="difficulty" class="form-select">
-                    <option value="">Any</option>
-                    <option value="easy" <?= $difficulty === 'easy' ? 'selected' : '' ?>>Easy</option>
-                    <option value="medium" <?= $difficulty === 'medium' ? 'selected' : '' ?>>Medium</option>
-                    <option value="hard" <?= $difficulty === 'hard' ? 'selected' : '' ?>>Hard</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-secondary">Filter</button>
-            </div>
+    <div class="esn-card card mb-4">
+        <div class="card-body">
+            <form method="get" action="<?= $link->url('Manual.index') ?>" class="row g-3 align-items-end esn-filter-row">
+                <input type="hidden" name="c" value="manual">
+                <input type="hidden" name="a" value="index">
+                <div class="col-12 col-lg-6">
+                    <label for="q" class="form-label">Search</label>
+                    <input type="text" id="q" name="q" class="form-control" value="<?= htmlspecialchars($q, ENT_QUOTES) ?>" placeholder="Search title or content">
+                </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label for="category" class="form-label">Category</label>
+                    <input type="text" id="category" name="category" class="form-control" value="<?= htmlspecialchars($category, ENT_QUOTES) ?>" maxlength="255" placeholder="Category">
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <label for="difficulty" class="form-label">Difficulty</label>
+                    <select id="difficulty" name="difficulty" class="form-select">
+                        <option value="">Any</option>
+                        <option value="easy" <?= $difficulty === 'easy' ? 'selected' : '' ?>>Easy</option>
+                        <option value="medium" <?= $difficulty === 'medium' ? 'selected' : '' ?>>Medium</option>
+                        <option value="hard" <?= $difficulty === 'hard' ? 'selected' : '' ?>>Hard</option>
+                    </select>
+                </div>
+                <div class="col-12 col-lg-1 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+                    <a href="<?= $link->url('Manual.index') ?>" class="btn btn-outline-secondary flex-fill">Reset</a>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 
     <?php if (empty($articles)): ?>
-        <p class="text-muted">No articles found.</p>
+        <div class="esn-card card p-4">
+            <h2 class="h5 mb-1">No articles found</h2>
+            <p class="text-muted mb-3">Try adjusting filters or create a new article.</p>
+            <?php if ($canManage): ?>
+                <a href="<?= $link->url('Manual.new') ?>" class="btn btn-primary">New Article</a>
+            <?php endif; ?>
+        </div>
     <?php else: ?>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Difficulty</th>
-                    <th>Created</th>
-                    <?php if ($canManage): ?>
-                        <th class="text-end">Actions</th>
-                    <?php endif; ?>
-                </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($articles as $article):
-                     $id = (int)($article['id'] ?? 0);
-                     $title = (string)($article['title'] ?? 'Untitled');
-                     $cat = (string)($article['category'] ?? '');
-                     $diff = (string)($article['difficulty'] ?? '');
-                     $createdAt = $formatDateTime($article['created_at'] ?? null);
-                     $creator = $formatUser($article);
-                ?>
-                    <tr>
-                        <td>
-                            <a href="<?= $link->url('Manual.show', ['id' => $id]) ?>">
-                                <?= htmlspecialchars($title, ENT_QUOTES) ?>
-                            </a>
+        <div class="esn-card-grid">
+            <?php foreach ($articles as $article):
+                $id = (int)($article['id'] ?? 0);
+                $title = (string)($article['title'] ?? 'Untitled');
+                $cat = trim((string)($article['category'] ?? ''));
+                $diff = $difficultyPill($article['difficulty'] ?? null);
+                $createdAt = $formatDateTime($article['created_at'] ?? null);
+                $creator = $formatUser($article);
+                $contentRaw = (string)($article['content'] ?? '');
+                $contentSnippet = trim(strip_tags($contentRaw));
+                if (strlen($contentSnippet) > 160) {
+                    $contentSnippet = substr($contentSnippet, 0, 157) . '…';
+                }
+            ?>
+            <article class="esn-card esn-record-card card h-100">
+                <div class="card-body d-flex flex-column gap-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                        <div>
+                            <a href="<?= $link->url('Manual.show', ['id' => $id]) ?>" class="text-decoration-none"><h2 class="h5 mb-1"><?= htmlspecialchars($title, ENT_QUOTES) ?></h2></a>
                             <div class="text-muted small">By <?= htmlspecialchars($creator, ENT_QUOTES) ?> • <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
-                        </td>
-                        <td><?= htmlspecialchars($cat !== '' ? $cat : '—', ENT_QUOTES) ?></td>
-                        <td>
-                            <?php if ($diff !== ''): ?>
-                                <span class="badge bg-info text-dark">
-                                    <?= htmlspecialchars($difficultyLabels[$diff] ?? ucfirst($diff), ENT_QUOTES) ?>
-                                </span>
-                            <?php else: ?>
-                                <span class="text-muted">n/a</span>
-                            <?php endif; ?>
-                        </td>
+                        </div>
                         <?php if ($canManage): ?>
-                            <td class="text-end">
-                                <a href="<?= $link->url('Manual.edit', ['id' => $id]) ?>" class="btn btn-sm btn-outline-primary me-2">Edit</a>
-                                <form method="post" action="<?= $link->url('Manual.delete', ['id' => $id]) ?>" class="d-inline" onsubmit="return confirm('Delete this article?');">
+                            <div class="d-flex flex-column flex-md-row gap-2">
+                                <a href="<?= $link->url('Manual.edit', ['id' => $id]) ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form method="post" action="<?= $link->url('Manual.delete', ['id' => $id]) ?>" onsubmit="return confirm('Delete this article?');" class="d-inline">
                                     <input type="hidden" name="id" value="<?= htmlspecialchars((string)$id, ENT_QUOTES) ?>">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                 </form>
-                            </td>
+                            </div>
                         <?php endif; ?>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <?php if ($cat !== ''): ?>
+                            <span class="esn-pill esn-pill--neutral">Category: <?= htmlspecialchars($cat, ENT_QUOTES) ?></span>
+                        <?php endif; ?>
+                        <?php if ($diff !== null): ?>
+                            <span class="<?= $diff[1] ?>">Difficulty: <?= htmlspecialchars($diff[0], ENT_QUOTES) ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if ($contentSnippet !== ''): ?>
+                        <p class="text-muted mb-0"><?= htmlspecialchars($contentSnippet, ENT_QUOTES) ?></p>
+                    <?php endif; ?>
+                </div>
+            </article>
+            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 </div>
