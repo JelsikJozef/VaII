@@ -1,6 +1,20 @@
 <?php
 // AI-GENERATED: Poll creation form view (GitHub Copilot / ChatGPT), 2026-01-19
 
+/**
+ * Polls: New.
+ *
+ * Poll creation form. Options are entered one-per-line.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,array<int,string>> $errors
+ * - string $question
+ * - string $status (open|closed)
+ * - string $optionsInput Multiline option text
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 

@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * Auth layout.
+ *
+ * Minimal HTML layout used for authentication-related pages (login/register).
+ * It intentionally omits the main navbar.
+ *
+ * Expected variables:
+ * - string $contentHTML Rendered page content.
+ * - \Framework\Core\IAuthenticator $auth Auth service.
+ * - \Framework\Support\LinkGenerator $link URL/asset helper.
+ */
+
 /** @var string $contentHTML */
 /** @var \Framework\Core\IAuthenticator $auth */
 /** @var \Framework\Support\LinkGenerator $link */

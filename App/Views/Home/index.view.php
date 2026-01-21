@@ -1,7 +1,22 @@
 <?php
 // AI-GENERATED: Dashboard activity actor names fallback (GitHub Copilot / ChatGPT), 2026-01-20
 
+/**
+ * Home: Dashboard.
+ *
+ * Landing page that links to modules and shows a recent activity feed.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<int,array<string,mixed>> $activities (optional; provided by HomeController)
+ */
+
+/** @var \Framework\Support\View $view */
+$view->setLayout('root');
+
 /** @var \Framework\Support\LinkGenerator $link */
+
 ?>
 
 <div class="container-lg esn-page">

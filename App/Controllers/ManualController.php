@@ -13,6 +13,24 @@ use Framework\Http\Responses\Response;
 use Framework\Http\Responses\JsonResponse;
 use Framework\Http\Session;
 
+/**
+ * Manual / knowledge-base controller.
+ *
+ * Features:
+ * - Browsing and searching articles (with optional filters).
+ * - Viewing a single article.
+ * - Admin-only management actions (create/edit/delete and related helpers).
+ * - Markdown is rendered to safe HTML via {@see MarkdownRenderer}.
+ *
+ * Authorization:
+ * - index(), show(): require login
+ * - all other actions: role `admin`
+ *
+ * Side-effects:
+ * - Mutates articles via {@see ManualRepository} for admin actions.
+ * - Uses session keys `manual.success` / `manual.error` as flash messages.
+ * - Some actions return JSON (e.g. internal helpers / async operations).
+ */
 class ManualController extends BaseController
 {
     private ?ManualRepository $repository = null;

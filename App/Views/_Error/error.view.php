@@ -1,5 +1,18 @@
 <?php
 
+/**
+ * Error page view.
+ *
+ * Renders a minimal error page for exceptions handled by the framework.
+ * When `$showDetail` is enabled (typically in development), prints stack traces
+ * and any chained previous exceptions.
+ *
+ * Expected variables:
+ * - \Framework\Http\HttpException $exception
+ * - bool $showDetail
+ * - \Framework\Support\View $view
+ */
+
 /** @var \Framework\Http\HttpException $exception */
 /** @var bool $showDetail */
 /** @var \Framework\Support\View $view */

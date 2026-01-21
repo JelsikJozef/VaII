@@ -7,15 +7,35 @@ use App\Database;
 use PDO;
 use PDOException;
 
+/**
+ * Polls repository.
+ *
+ * Encapsulates DB access for the polls feature:
+ * - polls
+ * - poll_options
+ * - poll_votes
+ *
+ * Notes:
+ * - Poll listing and single item queries join `users` to enrich creator name/email.
+ * - {@see addVote()} uses an INSERT...SELECT to ensure the selected option belongs
+ *   to the specified poll. If no row is inserted, it throws a {@see PDOException}.
+ */
 class PollsRepository
 {
+    /** PDO connection used for queries. */
     private PDO $pdo;
 
+    /**
+     * @param PDO|null $pdo Optional PDO injection for tests/DI.
+     */
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?? Database::getConnection();
     }
 
+    /**
+     * @return array<int,array<string,mixed>>
+     */
     public function findAll(): array
     {
         $stmt = $this->pdo->prepare(
@@ -32,6 +52,9 @@ class PollsRepository
         return is_array($rows) ? $rows : [];
     }
 
+    /**
+     * @return array<string,mixed>|null
+     */
     public function findPollById(int $id): ?array
     {
         $stmt = $this->pdo->prepare(
@@ -47,6 +70,9 @@ class PollsRepository
         return $row === false ? null : $row;
     }
 
+    /**
+     * @return array<int,array<string,mixed>> Each option row includes `option_text`.
+     */
     public function listOptions(int $pollId): array
     {
         $stmt = $this->pdo->prepare('SELECT id, poll_id, text AS option_text FROM poll_options WHERE poll_id = :poll_id ORDER BY id ASC');
@@ -57,6 +83,11 @@ class PollsRepository
         return is_array($rows) ? $rows : [];
     }
 
+    /**
+     * Create a poll.
+     *
+     * @return int New poll id.
+     */
     public function createPoll(string $question, bool $isActive, ?int $createdByUserId): int
     {
         $stmt = $this->pdo->prepare(
@@ -71,6 +102,11 @@ class PollsRepository
         return (int)$this->pdo->lastInsertId();
     }
 
+    /**
+     * Add an option for a poll.
+     *
+     * @return int New option id.
+     */
     public function addOption(int $pollId, string $optionText): int
     {
         $stmt = $this->pdo->prepare('INSERT INTO poll_options (poll_id, text, created_at) VALUES (:poll_id, :text, NOW())');
@@ -82,12 +118,18 @@ class PollsRepository
         return (int)$this->pdo->lastInsertId();
     }
 
+    /**
+     * Delete a poll by id.
+     */
     public function deletePoll(int $pollId): void
     {
         $stmt = $this->pdo->prepare('DELETE FROM polls WHERE id = :id');
         $stmt->execute(['id' => $pollId]);
     }
 
+    /**
+     * Check whether a given user has already voted in the poll.
+     */
     public function hasUserVoted(int $pollId, int $userId): bool
     {
         $stmt = $this->pdo->prepare('SELECT 1 FROM poll_votes WHERE poll_id = :poll_id AND user_id = :user_id LIMIT 1');
@@ -99,6 +141,11 @@ class PollsRepository
         return $stmt->fetchColumn() !== false;
     }
 
+    /**
+     * Get vote counts per option.
+     *
+     * @return array<int,array<string,mixed>> Each row includes `vote_count`.
+     */
     public function getResults(int $pollId): array
     {
         $stmt = $this->pdo->prepare(
@@ -116,6 +163,13 @@ class PollsRepository
         return is_array($rows) ? $rows : [];
     }
 
+    /**
+     * Add a vote for a poll option.
+     *
+     * This method guarantees the option belongs to the poll.
+     *
+     * @throws PDOException When the option does not belong to the selected poll.
+     */
     public function addVote(int $pollId, int $optionId, int $userId): void
     {
         $stmt = $this->pdo->prepare(

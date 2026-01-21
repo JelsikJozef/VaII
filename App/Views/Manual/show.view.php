@@ -1,5 +1,21 @@
 <?php
-// AI-GENERATED: Manual detail shows author names (GitHub Copilot / ChatGPT), 2026-01-20
+// AI-GENERATED: Knowledge base articles controller (GitHub Copilot / ChatGPT), 2026-01-18
+
+/**
+ * Manual: Show article.
+ *
+ * Displays a single knowledge-base article (rendered HTML) and its attachments.
+ * When `$canManage` is true, shows admin actions (edit/delete/upload attachment).
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,mixed> $article (includes content_html)
+ * - array<int,array<string,mixed>> $attachments
+ * - bool $canManage
+ * - string|null $successMessage
+ * - string|null $errorMessage
+ */
 
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');

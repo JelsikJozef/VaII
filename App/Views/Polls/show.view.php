@@ -1,6 +1,24 @@
 <?php
 // AI-GENERATED: Poll detail shows creator names (GitHub Copilot / ChatGPT), 2026-01-20
 
+/**
+ * Polls: Show (detail + voting).
+ *
+ * Shows a single poll, its options, current results, and the voting form.
+ * Also renders admin controls when `$canManage` is enabled.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,mixed> $poll
+ * - array<int,array<string,mixed>> $options
+ * - array<int,array<string,mixed>> $results
+ * - array<string,array<int,string>> $errors
+ * - int $selectedOptionId
+ * - bool $hasVoted
+ * - bool $canManage
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 

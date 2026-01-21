@@ -6,17 +6,61 @@ namespace App\Repositories;
 use App\Database;
 use PDO;
 
+/**
+ * Activity log repository.
+ *
+ * Persists and reads the application activity feed from the `activity_log` table.
+ * The home page uses {@see latest()} to display recent actions.
+ *
+ * Storage model (columns used):
+ * - id (auto increment)
+ * - created_at (timestamp)
+ * - user_id (nullable FK to users.id)
+ * - actor_name / actor_email (nullable overrides; falls back to users table)
+ * - entity / entity_id (optional reference to a domain entity)
+ * - action (string event key, e.g. `transaction.created`)
+ * - title (short human text)
+ * - details (optional longer description)
+ * - meta_json (optional JSON string, arbitrary metadata)
+ *
+ * Notes on enrichment:
+ * - `latest()` does a LEFT JOIN to `users` and uses COALESCE so that if
+ *   `actor_name`/`actor_email` are not stored in the activity row, the feed can
+ *   still show the user's current name/email.
+ */
 class ActivityRepository
 {
+    /**
+     * PDO connection used for all queries.
+     */
     private PDO $pdo;
 
+    /**
+     * @param PDO|null $pdo Optional PDO to support testing/DI. When null, uses
+     *                      {@see Database::getConnection()}.
+     */
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?? Database::getConnection();
     }
 
     /**
-     * @param array<string,mixed> $event
+     * Insert an activity event.
+     *
+     * Expected input keys (all optional unless specified):
+     * - user_id: int|null
+     * - actor_name: string|null (override display name)
+     * - actor_email: string|null (override display email)
+     * - entity: string (required; defaults to empty string)
+     * - entity_id: int|string|null
+     * - action: string (required; defaults to empty string)
+     * - title: string (required; defaults to empty string)
+     * - details: string|null
+     * - meta_json: string|null (JSON string)
+     *
+     * @param array<string,mixed> $event Event payload.
+     *
+     * @return int Inserted row id.
      */
     public function log(array $event): int
     {
@@ -39,6 +83,26 @@ class ActivityRepository
     }
 
     /**
+     * Fetch the most recent activity events.
+     *
+     * Filtering:
+     * - $excludeActions removes exact action keys.
+     * - $excludePrefixes removes action keys by prefix (LIKE 'prefix%').
+     *
+     * Behavior:
+     * - Always returns an array.
+     * - If the DB query fails, returns an empty array (exceptions are swallowed).
+     * - $limit is clamped to at least 1.
+     *
+     * Returned row shape (keys):
+     * - id, created_at, user_id
+     * - actor_name, actor_email (COALESCE(row override, users table))
+     * - entity, entity_id, action, title, details, meta_json
+     *
+     * @param int $limit Max number of rows.
+     * @param array<int,string> $excludeActions List of exact action keys to exclude.
+     * @param array<int,string> $excludePrefixes List of action prefixes to exclude.
+     *
      * @return array<int,array<string,mixed>>
      */
     public function latest(int $limit = 10, array $excludeActions = [], array $excludePrefixes = []): array

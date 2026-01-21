@@ -11,6 +11,30 @@ use Framework\Http\Request;
 use Framework\Http\Responses\Response;
 use Framework\Http\Session;
 
+/**
+ * Admin registration approvals controller.
+ *
+ * Allows administrators to review newly registered users and decide whether
+ * they can log in.
+ *
+ * How it works:
+ * - New users are created with role `pending` (see `AuthController::register()`).
+ * - While `pending`, `DbAuthenticator` rejects login attempts.
+ * - Admins can approve/reject users and optionally set their role.
+ *
+ * Authorization:
+ * - All actions require role `admin`.
+ *
+ * Actions:
+ * - index(): List users and available roles; shows flash messages.
+ * - approve(): Approve a pending user and assign a selected role.
+ * - reject(): Delete a user record.
+ * - setRole(): Change an existing user’s role.
+ *
+ * Side-effects:
+ * - Mutates user records via {@see UserRepository}.
+ * - Uses session keys `admin.reg.success` / `admin.reg.error` as flash messages.
+ */
 class AdminRegistrationsController extends BaseController
 {
     private ?UserRepository $repo = null;

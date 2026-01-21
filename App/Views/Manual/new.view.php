@@ -1,5 +1,20 @@
 <?php
-// AI-GENERATED: Manual create form view (GitHub Copilot / ChatGPT), 2026-01-18
+// AI-GENERATED: Knowledge base articles controller (GitHub Copilot / ChatGPT), 2026-01-18
+
+/**
+ * Manual: New article.
+ *
+ * Form for creating a knowledge-base article.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,array<int,string>> $errors
+ * - string $title
+ * - string $category
+ * - string $difficulty
+ * - string $content
+ */
 
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');

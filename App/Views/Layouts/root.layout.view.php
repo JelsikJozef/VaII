@@ -1,6 +1,20 @@
 <?php
 // AI-GENERATED: Auth-aware root layout navbar update (GitHub Copilot / ChatGPT), 2026-01-18
 
+/**
+ * Root (main) layout.
+ *
+ * Wraps all standard pages with the global HTML skeleton: head tags, CSS/JS
+ * includes, navbar, and the content container.
+ *
+ * Expected variables:
+ * - string $contentHTML Rendered page content.
+ * - \Framework\Core\IAuthenticator $auth Auth service (to check login state).
+ * - \Framework\Support\LinkGenerator $link URL/asset helper.
+ * - \Framework\Http\Request|null $request Optional request object.
+ * - string|null $activeModule Optional current module name for highlighting navbar.
+ */
+
 /** @var string $contentHTML */
 /** @var \Framework\Core\IAuthenticator $auth */
 /** @var \Framework\Support\LinkGenerator $link */

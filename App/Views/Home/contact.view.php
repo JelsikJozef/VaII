@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * Home: Contact.
+ *
+ * Static contact information + embedded map.
+ *
+ * Expected variables:
+ * - \Framework\Support\LinkGenerator $link
+ */
+
 /** @var \Framework\Support\LinkGenerator $link */
 ?>
 

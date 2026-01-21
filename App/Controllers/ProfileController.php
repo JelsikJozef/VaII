@@ -14,6 +14,24 @@ use Framework\Http\Request;
 use Framework\Http\Responses\Response;
 use Framework\Http\Session;
 
+/**
+ * Logged-in user profile controller.
+ *
+ * Provides self-service profile management:
+ * - Viewing the current user’s information
+ * - Editing name/email
+ * - Changing password
+ *
+ * Authorization:
+ * - All actions require the user to be logged in.
+ *
+ * Side-effects & security notes:
+ * - `update()` persists profile changes and refreshes the identity stored in the session
+ *   (`Configuration::IDENTITY_SESSION_KEY`) so the navbar/UI immediately reflects changes.
+ * - `changePassword()` updates the password hash and regenerates the PHP session id
+ *   (when available) to reduce session fixation risk.
+ * - Uses session keys `profile.success` / `profile.error` as flash messages.
+ */
 class ProfileController extends BaseController
 {
     private ?UserRepository $repository = null;

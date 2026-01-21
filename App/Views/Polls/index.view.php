@@ -1,6 +1,21 @@
 <?php
 // AI-GENERATED: Polls listing shows creator names (GitHub Copilot / ChatGPT), 2026-01-20
 
+/**
+ * Polls: Index.
+ *
+ * Lists polls with open/closed badges and creator info.
+ * When `$canManage` is true, allows creating and deleting polls.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<int,array<string,mixed>> $polls
+ * - bool $canManage
+ * - string|null $successMessage
+ * - string|null $errorMessage
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 

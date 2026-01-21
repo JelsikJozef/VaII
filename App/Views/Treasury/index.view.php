@@ -1,6 +1,24 @@
 <?php
 // AI-GENERATED: Treasury cards show creator/approver names (GitHub Copilot / ChatGPT), 2026-01-20
 
+/**
+ * Treasury: Index.
+ *
+ * Shows the current balance, pending balance, and a table/list of transactions.
+ * Includes action buttons (edit/delete/moderate) based on the current user role
+ * and ownership.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<int,array<string,mixed>> $transactions
+ * - float $currentBalance
+ * - float $pendingBalance
+ * - string|null $successMessage
+ * - string|null $errorMessage
+ * - \Framework\Auth\AppUser|null $user (provided by the framework)
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 
@@ -12,17 +30,10 @@ $view->setLayout('root');
 $transactions = $transactions ?? [];
 $currentBalance = $currentBalance ?? 0.0;
 $pendingBalance = $pendingBalance ?? 0.0;
-$canModerate = in_array($user?->getRole(), ['treasurer', 'admin'], true);
-$currentUserId = $user?->getIdentity()?->getId();
-$canManageTx = static function (array $tx) use ($canModerate, $currentUserId): bool {
-    if ($canModerate) {
-        return true;
-    }
 
-    $ownerId = (int)($tx['created_by'] ?? 0);
-    $status = strtolower((string)($tx['status'] ?? ''));
-    return ($ownerId > 0 && $currentUserId !== null && (int)$currentUserId === $ownerId && $status === 'pending');
-};
+// Permissions must be computed outside the view (controller/service).
+// Each transaction is expected to contain booleans:
+// - canEdit, canDelete, canApproveReject
 
 $formatUser = static function (array $tx, string $nameKey, string $emailKey): string {
     $name = trim((string)($tx[$nameKey] ?? ''));
@@ -61,6 +72,12 @@ $typeMap = [
     <?php if (!empty($errorMessage)): ?>
         <div class="alert alert-danger mb-3">
             <?= htmlspecialchars($errorMessage, ENT_QUOTES) ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($successMessage)): ?>
+        <div class="alert alert-success mb-3">
+            <?= htmlspecialchars($successMessage, ENT_QUOTES) ?>
         </div>
     <?php endif; ?>
 
@@ -142,18 +159,22 @@ $typeMap = [
                             <?= htmlspecialchars($statusData[0], ENT_QUOTES) ?></span>
                     </footer>
                     <div class="treasury-card__actions mt-3 d-flex gap-2">
-                        <?php if ($canManageTx($tx)): ?>
+                        <?php if (!empty($tx['canEdit'])): ?>
                             <a href="<?= $editUrl ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <?php endif; ?>
+
+                        <?php if (!empty($tx['canDelete'])): ?>
                             <form method="post" action="<?= $deleteUrl ?>" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this transaction?');">
                                 <input type="hidden" name="id" value="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                             </form>
                         <?php endif; ?>
-                         <?php if ($canModerate && ($status === 'pending')): ?>
-                             <button type="button" class="btn btn-sm btn-success js-tx-approve" data-id="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">Approve</button>
-                             <button type="button" class="btn btn-sm btn-danger js-tx-reject" data-id="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">Reject</button>
-                         <?php endif; ?>
-                     </div>
+
+                        <?php if (!empty($tx['canApproveReject'])): ?>
+                            <button type="button" class="btn btn-sm btn-success js-tx-approve" data-id="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">Approve</button>
+                            <button type="button" class="btn btn-sm btn-danger js-tx-reject" data-id="<?= htmlspecialchars((string)($tx['id'] ?? 0), ENT_QUOTES) ?>">Reject</button>
+                        <?php endif; ?>
+                    </div>
                 </article>
                 <?php endforeach; ?>
             </div>

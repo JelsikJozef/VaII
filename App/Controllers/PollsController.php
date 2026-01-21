@@ -12,6 +12,19 @@ use Framework\Http\Responses\Response;
 use Framework\Http\Session;
 use PDOException;
 
+/**
+ * Polls controller (create polls + vote).
+ *
+ * Authorization (see {@see authorize()}):
+ * - index/show/vote: requires role in {member, treasurer, admin}
+ * - new/store/delete/setStatus: admin only
+ * - remaining actions: require login
+ *
+ * Side-effects:
+ * - Persists polls, options, and votes via {@see PollsRepository}.
+ * - Uses session keys `polls.success` / `polls.error` as flash messages.
+ * - Some operations may throw/handle {@see PDOException} for DB constraint errors.
+ */
 class PollsController extends BaseController
 {
     private ?PollsRepository $repository = null;

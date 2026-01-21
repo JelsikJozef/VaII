@@ -9,12 +9,24 @@ use Framework\Http\Request;
 use Framework\Http\Responses\Response;
 
 /**
- * Class AuthController
+ * Authentication controller (login / logout / registration).
  *
- * This controller handles authentication actions such as login, logout, and redirection to the login page. It manages
- * user sessions and interactions with the authentication system.
+ * Responsibilities:
+ * - Render login and registration forms.
+ * - Validate submitted credentials.
+ * - Delegate authentication to the configured authenticator
+ *   (see `App/Auth/DbAuthenticator.php`).
+ * - Create new user accounts in `pending` state.
  *
- * @package App\Controllers
+ * Authorization:
+ * - Public: index(), loginForm(), login(), registerForm(), register()
+ * - Requires login: logout()
+ *
+ * Side-effects:
+ * - On successful login, the authenticator stores an {@see \Framework\Core\IIdentity}
+ *   in the session.
+ * - On registration, a user is created with role `pending` and a success message
+ *   is stored in session key `auth.success`.
  */
 class AuthController extends BaseController
 {

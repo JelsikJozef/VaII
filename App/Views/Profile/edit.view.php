@@ -1,6 +1,24 @@
 <?php
 // AI-GENERATED: Profile edit and password change page (GitHub Copilot / ChatGPT), 2026-01-19
 
+/**
+ * Profile: Edit.
+ *
+ * Contains two forms:
+ * - update profile details (name/email)
+ * - change password
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,array<int,string>> $errorsProfile
+ * - array<string,array<int,string>> $errorsPassword
+ * - string $name
+ * - string $email
+ * - string|null $successMessage
+ * - string|null $errorMessage
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 

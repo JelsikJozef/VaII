@@ -1,6 +1,20 @@
 <?php
 // AI-GENERATED: Registration form for pending approval (GitHub Copilot / ChatGPT), 2026-01-19
 
+/**
+ * Auth: Registration form.
+ *
+ * Creates a new user account in `pending` state (approval is handled by admins).
+ * This view shows field-level validation errors.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,array<int,string>> $errors
+ * - string $name
+ * - string $email
+ */
+
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var \Framework\Support\View $view */
 /** @var array $errors */

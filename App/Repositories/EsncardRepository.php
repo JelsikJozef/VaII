@@ -6,17 +6,37 @@ namespace App\Repositories;
 use App\Database;
 use PDO;
 
+/**
+ * ESN cards repository.
+ *
+ * Performs CRUD operations on the `esncards` table.
+ *
+ * Common fields (expected):
+ * - id
+ * - card_number (unique)
+ * - status (available|assigned|inactive)
+ * - assigned_to_name / assigned_to_email / assigned_at (nullable)
+ * - created_at
+ */
 class EsncardRepository
 {
+    /** PDO connection used for queries. */
     private PDO $pdo;
 
+    /**
+     * @param PDO|null $pdo Optional PDO injection for tests/DI.
+     */
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?? Database::getConnection();
     }
 
     /**
-     * List ESNcards with optional search and status filter.
+     * List cards with optional search and status filter.
+     *
+     * @param string|null $search Matched against card_number and assigned_to_email.
+     * @param string|null $status Exact status filter.
+     * @return array<int,array<string,mixed>>
      */
     public function findAll(?string $search = null, ?string $status = null): array
     {
@@ -45,7 +65,7 @@ class EsncardRepository
     }
 
     /**
-     * Find single ESNcard by id.
+     * Find a single card by id.
      */
     public function findById(int $id): ?array
     {
@@ -57,7 +77,7 @@ class EsncardRepository
     }
 
     /**
-     * Check uniqueness of card number, optionally excluding one record.
+     * Check whether a card number exists (optionally excluding one record).
      */
     public function existsByCardNumber(string $cardNumber, ?int $excludeId = null): bool
     {
@@ -76,7 +96,10 @@ class EsncardRepository
     }
 
     /**
-     * Insert new ESNcard and return generated id.
+     * Insert a new card.
+     *
+     * @param array<string,mixed> $data Normalized input matching table columns.
+     * @return int Inserted id.
      */
     public function create(array $data): int
     {
@@ -97,7 +120,9 @@ class EsncardRepository
     }
 
     /**
-     * Update ESNcard by id.
+     * Update an existing card.
+     *
+     * @param array<string,mixed> $data Normalized input matching table columns.
      */
     public function update(int $id, array $data): void
     {
@@ -118,7 +143,7 @@ class EsncardRepository
     }
 
     /**
-     * Delete ESNcard by id.
+     * Delete a card.
      */
     public function delete(int $id): void
     {

@@ -13,6 +13,20 @@ use Framework\Http\Responses\Response;
 use Framework\Http\Session;
 use App\Services\NewsService;
 
+/**
+ * ESNcard management controller.
+ *
+ * Provides a small CRUD UI for managing ESN card inventory and assignments.
+ *
+ * Authorization:
+ * - index(): any logged-in user (to view/search)
+ * - all other actions: role `treasurer` or `admin`
+ *
+ * Side-effects:
+ * - Writes card data through {@see EsncardRepository}.
+ * - Emits news/activity entries through {@see NewsRepository}/{@see NewsService}.
+ * - Uses session keys `esncards.success` / `esncards.error` as flash messages.
+ */
 class EsncardsController extends BaseController
 {
     private ?EsncardRepository $repository = null;

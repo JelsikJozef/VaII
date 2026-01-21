@@ -1,6 +1,20 @@
 <?php
 // AI-GENERATED: Login form view with validation messages (GitHub Copilot / ChatGPT), 2026-01-18
 
+/**
+ * Auth: Login form.
+ *
+ * Renders the login form and displays validation errors and generic auth errors.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,array<int,string>> $errors Field validation errors.
+ * - string $email Previously entered email (sticky field).
+ * - string|null $genericError Generic login error (invalid credentials / pending).
+ * - string|null $successMessage One-time success message (e.g. after registration).
+ */
+
 /** @var string|null $message */
 /** @var string|null $successMessage */
 /** @var \Framework\Support\LinkGenerator $link */

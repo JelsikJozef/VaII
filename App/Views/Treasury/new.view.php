@@ -1,5 +1,21 @@
 <?php
 
+/**
+ * Treasury: New transaction.
+ *
+ * Form for submitting a new treasury transaction (deposit/withdrawal).
+ * Includes a balance preview that can be updated client-side.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,array<int,string>> $errors
+ * - string $type (deposit|withdrawal)
+ * - string $amount
+ * - string $description
+ * - float $currentBalance
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 
