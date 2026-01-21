@@ -148,4 +148,54 @@ class UploadedFile
     {
         return move_uploaded_file($this->getFileTempPath(), $fileName);
     }
+
+    /**
+     * Detect MIME type using server-side finfo on the temporary uploaded file.
+     *
+     * IMPORTANT: Do not use client-supplied Content-Type for allow/deny decisions.
+     */
+    public function detectMimeType(): ?string
+    {
+        $tmp = $this->getFileTempPath();
+        if ($tmp === '' || !is_file($tmp)) {
+            return null;
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmp);
+        if ($mime === false || $mime === '') {
+            return null;
+        }
+
+        return (string)$mime;
+    }
+
+    /**
+     * Read the first N bytes of the uploaded file for magic-bytes checks.
+     */
+    public function readPrefix(int $length): ?string
+    {
+        if ($length <= 0) {
+            return '';
+        }
+
+        $tmp = $this->getFileTempPath();
+        if ($tmp === '' || !is_file($tmp)) {
+            return null;
+        }
+
+        $fp = fopen($tmp, 'rb');
+        if ($fp === false) {
+            return null;
+        }
+
+        $data = fread($fp, $length);
+        fclose($fp);
+
+        if ($data === false) {
+            return null;
+        }
+
+        return $data;
+    }
 }

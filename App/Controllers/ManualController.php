@@ -182,16 +182,19 @@ class ManualController extends BaseController
             return $this->attachmentError($msg, 400, ['file' => [$msg]]);
         }
 
+        // Keep application-level limit (actual enforced limit may be lower due to PHP ini).
         $maxSize = 10 * 1024 * 1024;
         if ($uploaded->getSize() > $maxSize) {
+            $msg = 'File is too large.';
             if (!$request->isAjax()) {
-                $this->flash('manual.error', 'File is too large (max 10 MB).');
+                $this->flash('manual.error', $msg);
                 return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
             }
-            return $this->attachmentError('File is too large (max 10 MB).', 400, ['file' => ['File is too large (max 10 MB).']]);
+            return $this->attachmentError($msg, 400, ['file' => [$msg]]);
         }
 
-        $mime = $this->detectMimeType($uploaded->getFileTempPath()) ?? $uploaded->getType();
+        // Server-side MIME detection ONLY (do not trust client-supplied Content-Type)
+        $mime = $uploaded->detectMimeType();
         $allowed = [
             'application/pdf' => 'pdf',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
@@ -199,14 +202,65 @@ class ManualController extends BaseController
             'image/jpeg' => 'jpg',
         ];
 
-        if (!array_key_exists($mime, $allowed)) {
-            return $this->attachmentError('Unsupported file type.', 400, ['file' => ['Allowed types: PDF, DOCX, PNG, JPG.']]);
+        if ($mime === null || !array_key_exists($mime, $allowed)) {
+            error_log('Manual attachment rejected: unsupported MIME: ' . (string)$mime);
+            return $this->attachmentError('Unsupported file type.', 400, ['file' => ['Unsupported file type.']]);
+        }
+
+        // Magic-bytes check
+        $prefix = $uploaded->readPrefix(8);
+        if ($prefix === null) {
+            error_log('Manual attachment rejected: could not read file prefix');
+            return $this->attachmentError('Invalid file.', 400, ['file' => ['Invalid file.']]);
+        }
+
+        $isMagicOk = match ($mime) {
+            'application/pdf' => str_starts_with($prefix, "%PDF-"),
+            'image/png' => strncmp($prefix, "\x89PNG", 4) === 0,
+            'image/jpeg' => strncmp($prefix, "\xFF\xD8\xFF", 3) === 0,
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => strncmp($prefix, 'PK', 2) === 0,
+            default => false,
+        };
+
+        if (!$isMagicOk) {
+            error_log('Manual attachment rejected: magic bytes mismatch for MIME: ' . $mime);
+            return $this->attachmentError('Invalid file.', 400, ['file' => ['Invalid file.']]);
         }
 
         $extension = $allowed[$mime];
+
+        // Extension consistency (reject double extensions too)
+        $originalRawName = (string)$uploaded->getName();
+        $basename = basename(str_replace(['\\', '/'], '/', $originalRawName));
+        $parts = array_values(array_filter(explode('.', $basename), static fn($p) => $p !== ''));
+        $originalExt = strtolower((string)pathinfo($basename, PATHINFO_EXTENSION));
+
+        if ($originalExt === '' || count($parts) >= 3) {
+            error_log('Manual attachment rejected: missing or double extension: ' . $basename);
+            return $this->attachmentError('Invalid file name.', 400, ['file' => ['Invalid file name.']]);
+        }
+
+        $isExtOk = match ($mime) {
+            'image/jpeg' => in_array($originalExt, ['jpg', 'jpeg'], true),
+            default => $originalExt === $extension,
+        };
+
+        if (!$isExtOk) {
+            error_log('Manual attachment rejected: extension mismatch: ' . $basename . ' (mime ' . $mime . ')');
+            return $this->attachmentError('Invalid file type.', 400, ['file' => ['Invalid file type.']]);
+        }
+
+        // Normalize stored extension (store JPG even if original is JPEG)
+        if ($mime === 'image/jpeg') {
+            $extension = 'jpg';
+        }
+
+        // Original filename must NEVER be reused for storage
         $originalName = $this->sanitizeOriginalFilename($uploaded->getName());
+
         $storageDir = $this->getAttachmentStorageDir();
 
+        // Ensure storage directory exists (storage/manual)
         if (!is_dir($storageDir) && !mkdir($storageDir, 0775, true) && !is_dir($storageDir)) {
             return $this->attachmentError('Storage path unavailable.', 500);
         }
@@ -518,5 +572,35 @@ class ManualController extends BaseController
             return;
         }
         $this->flash('manual.error', $message);
+    }
+
+    /**
+     * Return a JSON error response for attachment operations.
+     */
+    private function attachmentError(string $message, int $status = 400, array $errors = []): Response
+    {
+        return $this->json([
+            'ok' => false,
+            'message' => $message,
+            'errors' => $errors,
+        ], $status);
+    }
+
+    /**
+     * Sanitize the original filename (remove path traversal, normalize).
+     */
+    private function sanitizeOriginalFilename(string $name): string
+    {
+        $name = basename(str_replace(['\\', '/'], '/', $name));
+        $name = preg_replace('/[^\w.\-]/u', '_', $name) ?? $name;
+        return $name !== '' ? $name : 'file';
+    }
+
+    /**
+     * Generate a random stored filename with the given extension.
+     */
+    private function generateStoredFilename(string $extension): string
+    {
+        return bin2hex(random_bytes(16)) . '.' . $extension;
     }
 }
