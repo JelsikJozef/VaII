@@ -122,7 +122,9 @@ $difficultyLabels = [
                     $filePath = (string)($attachment['file_path'] ?? '');
                     $urlPath = (string)($attachment['url'] ?? '');
                     $label = $filePath !== '' ? basename($filePath) : ($urlPath !== '' ? $urlPath : 'attachment');
-                    $href = $filePath !== '' ? '/' . ltrim($filePath, '/') : $urlPath;
+                    $href = $filePath !== ''
+                        ? $link->url('Manual.downloadAttachment', ['id' => $attachmentId])
+                        : $urlPath;
                     ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center" data-attachment-id="<?= htmlspecialchars((string)$attachmentId, ENT_QUOTES) ?>">
                         <div>

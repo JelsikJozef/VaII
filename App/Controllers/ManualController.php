@@ -14,24 +14,6 @@ use Framework\Http\Responses\Response;
 use Framework\Http\Responses\JsonResponse;
 use Framework\Http\Session;
 
-/**
- * Manual / knowledge-base controller.
- *
- * Features:
- * - Browsing and searching articles (with optional filters).
- * - Viewing a single article.
- * - Admin-only management actions (create/edit/delete and related helpers).
- * - Markdown is rendered to safe HTML via {@see MarkdownRenderer}.
- *
- * Authorization:
- * - index(), show(): require login
- * - all other actions: role `admin`
- *
- * Side-effects:
- * - Mutates articles via {@see ManualRepository} for admin actions.
- * - Uses session keys `manual.success` / `manual.error` as flash messages.
- * - Some actions return JSON (e.g. internal helpers / async operations).
- */
 class ManualController extends BaseController
 {
     private ?ManualRepository $repository = null;
@@ -240,12 +222,16 @@ class ManualController extends BaseController
             return $this->attachmentError('Failed to save uploaded file.', 500, ['file' => ['Failed to save uploaded file.']]);
         }
 
-        $relativePath = 'uploads/manual/' . $storedName;
+        // Store an internal relative path (NOT a public URL)
+        $relativePath = 'manual/' . $storedName;
 
         try {
             $attachmentId = $this->repo()->addAttachment($articleId, $relativePath, null);
         } catch (\Throwable $e) {
-            @unlink($targetPath);
+            // Do not suppress filesystem errors
+            if (is_file($targetPath)) {
+                unlink($targetPath);
+            }
             if (!$request->isAjax()) {
                 $this->flash('manual.error', 'Could not save attachment.');
                 return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
@@ -298,9 +284,9 @@ class ManualController extends BaseController
 
         $filePath = (string)($attachment['file_path'] ?? '');
         if ($filePath !== '') {
-            $fullPath = $this->getPublicDir() . DIRECTORY_SEPARATOR . str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $filePath);
-            if (is_file($fullPath)) {
-                @unlink($fullPath);
+            $absolute = $this->resolveAttachmentAbsolutePath($filePath);
+            if ($absolute !== null && is_file($absolute)) {
+                unlink($absolute);
             }
         }
 
@@ -308,6 +294,115 @@ class ManualController extends BaseController
 
         $this->flash('manual.success', 'Attachment deleted.');
         return $this->redirect($this->url('Manual.show', ['id' => $articleId]));
+    }
+
+    /**
+     * Download a manual attachment via a controlled endpoint.
+     *
+     * Requires login (and admin if your rule is that manual access is restricted).
+     */
+    public function downloadAttachment(Request $request): Response
+    {
+        // Manual controller authorize() already requires login.
+        // If you want *admin only* downloads, uncomment:
+        // if (!$this->requireRole(['admin'])) { return $this->redirect($this->url('Manual.index')); }
+
+        $attachmentId = (int)($request->get('id') ?? 0);
+        if ($attachmentId <= 0) {
+            return $this->redirect($this->url('Manual.index'));
+        }
+
+        $attachment = $this->repo()->findAttachmentById($attachmentId);
+        if ($attachment === null) {
+            return $this->redirect($this->url('Manual.index'));
+        }
+
+        $filePath = (string)($attachment['file_path'] ?? '');
+        if ($filePath === '') {
+            return $this->redirect($this->url('Manual.index'));
+        }
+
+        $absolute = $this->resolveAttachmentAbsolutePath($filePath);
+        if ($absolute === null || !is_file($absolute) || !is_readable($absolute)) {
+            return $this->redirect($this->url('Manual.index'));
+        }
+
+        $downloadName = basename($filePath);
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($absolute) ?: 'application/octet-stream';
+
+        if (ob_get_level() > 0) {
+            // Avoid corrupting binary output
+            ob_end_clean();
+        }
+
+        header('Content-Type: ' . $mime);
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Disposition: attachment; filename="' . $this->headerSafeFilename($downloadName) . '"');
+        header('Content-Length: ' . (string)filesize($absolute));
+
+        $fp = fopen($absolute, 'rb');
+        if ($fp === false) {
+            return $this->redirect($this->url('Manual.index'));
+        }
+        fpassthru($fp);
+        fclose($fp);
+        exit;
+    }
+
+    /**
+     * Attachment storage directory (non-public).
+     */
+    private function getAttachmentStorageDir(): string
+    {
+        // Project root: App/Controllers -> App -> project
+        $projectRoot = dirname(__DIR__, 2);
+        return $projectRoot . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'manual';
+    }
+
+    /**
+     * Resolve internal file_path to an absolute path, enforcing that it stays under the storage base dir.
+     */
+    private function resolveAttachmentAbsolutePath(string $internalFilePath): ?string
+    {
+        $rel = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $internalFilePath);
+        $rel = ltrim($rel, DIRECTORY_SEPARATOR);
+
+        // We only allow files stored under manual/
+        $prefix = 'manual' . DIRECTORY_SEPARATOR;
+        if ($rel !== 'manual' && !str_starts_with($rel, $prefix)) {
+            return null;
+        }
+
+        $baseDir = $this->getAttachmentStorageDir();
+        $baseReal = realpath($baseDir);
+        if ($baseReal === false) {
+            return null;
+        }
+
+        $candidate = $baseDir . DIRECTORY_SEPARATOR . substr($rel, strlen($prefix));
+        $candidateReal = realpath($candidate);
+        if ($candidateReal === false) {
+            return null;
+        }
+
+        // Ensure candidate is inside base dir
+        $baseReal = rtrim($baseReal, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $candidateRealNorm = rtrim($candidateReal, DIRECTORY_SEPARATOR);
+        if (!str_starts_with($candidateRealNorm . DIRECTORY_SEPARATOR, $baseReal)) {
+            return null;
+        }
+
+        return $candidateReal;
+    }
+
+    private function headerSafeFilename(string $name): string
+    {
+        // Minimal header hardening: remove quotes and CRLF
+        $name = str_replace(["\r", "\n", '"'], '', $name);
+        $name = trim($name);
+        return $name !== '' ? $name : 'download';
     }
 
     private function collectInput(Request $request): array
