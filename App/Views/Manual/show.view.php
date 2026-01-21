@@ -1,5 +1,21 @@
 <?php
-// AI-GENERATED: Manual detail shows author names (GitHub Copilot / ChatGPT), 2026-01-20
+// AI-GENERATED: Knowledge base articles controller (GitHub Copilot / ChatGPT), 2026-01-18
+
+/**
+ * Manual: Show article.
+ *
+ * Displays a single knowledge-base article (rendered HTML) and its attachments.
+ * When `$canManage` is true, shows admin actions (edit/delete/upload attachment).
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,mixed> $article (includes content_html)
+ * - array<int,array<string,mixed>> $attachments
+ * - bool $canManage
+ * - string|null $successMessage
+ * - string|null $errorMessage
+ */
 
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
@@ -106,7 +122,9 @@ $difficultyLabels = [
                     $filePath = (string)($attachment['file_path'] ?? '');
                     $urlPath = (string)($attachment['url'] ?? '');
                     $label = $filePath !== '' ? basename($filePath) : ($urlPath !== '' ? $urlPath : 'attachment');
-                    $href = $filePath !== '' ? '/' . ltrim($filePath, '/') : $urlPath;
+                    $href = $filePath !== ''
+                        ? $link->url('Manual.downloadAttachment', ['id' => $attachmentId])
+                        : $urlPath;
                     ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center" data-attachment-id="<?= htmlspecialchars((string)$attachmentId, ENT_QUOTES) ?>">
                         <div>

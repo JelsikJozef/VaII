@@ -6,17 +6,43 @@ namespace App\Repositories;
 use App\Database;
 use PDO;
 
+/**
+ * Users repository.
+ *
+ * Encapsulates all DB access for user accounts and roles.
+ *
+ * Used by:
+ * - Authentication (`DbAuthenticator` -> {@see findByEmail()})
+ * - Registration (creating a `pending` user via {@see createPendingUser()})
+ * - Admin approval / role management (see `AdminRegistrationsController`)
+ * - Profile screen (lookup by id)
+ *
+ * Tables used (expected):
+ * - users(id, name, email, password_hash, role_id, created_at, ...)
+ * - roles(id, name)
+ */
 class UserRepository
 {
+    /** PDO connection used for queries. */
     private PDO $pdo;
 
+    /** Role slug used for newly registered users awaiting approval. */
     private const PENDING_ROLE = 'pending';
 
+    /**
+     * @param PDO|null $pdo Optional PDO injection for tests/DI.
+     */
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?? Database::getConnection();
     }
 
+    /**
+     * Find a user by email, including role name.
+     *
+     * @param string $email
+     * @return array<string,mixed>|null Row with keys: id, name, email, password_hash, role_name.
+     */
     public function findByEmail(string $email): ?array
     {
         $sql = 'SELECT u.id, u.name, u.email, u.password_hash, r.name AS role_name
@@ -32,6 +58,9 @@ class UserRepository
         return $row === false ? null : $row;
     }
 
+    /**
+     * Check if a user with the given email exists.
+     */
     public function emailExists(string $email): bool
     {
         $stmt = $this->pdo->prepare('SELECT 1 FROM users WHERE email = :email LIMIT 1');
@@ -39,6 +68,11 @@ class UserRepository
         return $stmt->fetchColumn() !== false;
     }
 
+    /**
+     * Find a user by id, including role name.
+     *
+     * @return array<string,mixed>|null
+     */
     public function findById(int $id): ?array
     {
         $sql = 'SELECT u.id, u.name, u.email, u.password_hash, r.name AS role_name
@@ -54,6 +88,13 @@ class UserRepository
         return $row === false ? null : $row;
     }
 
+    /**
+     * Create a new user with the `pending` role.
+     *
+     * The password must already be hashed (typically `password_hash()`).
+     *
+     * @return int New user id.
+     */
     public function createPendingUser(string $name, string $email, string $passwordHash): int
     {
         $pendingRoleId = $this->ensureRole(self::PENDING_ROLE);
@@ -68,6 +109,11 @@ class UserRepository
         return (int)$this->pdo->lastInsertId();
     }
 
+    /**
+     * List users who are currently pending approval.
+     *
+     * @return array<int,array<string,mixed>>
+     */
     public function findPendingUsers(): array
     {
         $pendingRoleId = $this->ensureRole(self::PENDING_ROLE);
@@ -76,6 +122,11 @@ class UserRepository
         return $stmt->fetchAll();
     }
 
+    /**
+     * List all users with their role labels.
+     *
+     * @return array<int,array<string,mixed>>
+     */
     public function findAllUsers(): array
     {
         $sql = 'SELECT u.id, u.name, u.email, u.created_at, r.name AS role_name
@@ -87,29 +138,47 @@ class UserRepository
         return $stmt->fetchAll();
     }
 
+    /**
+     * Approve user by assigning a role.
+     */
     public function approveUser(int $id, int $roleId): void
     {
         $stmt = $this->pdo->prepare('UPDATE users SET role_id = :role_id WHERE id = :id');
         $stmt->execute(['role_id' => $roleId, 'id' => $id]);
     }
 
+    /**
+     * Reject a user registration (currently implemented as a delete).
+     */
     public function rejectUser(int $id): void
     {
         $this->deleteUser($id);
     }
 
+    /**
+     * Update a user's role.
+     */
     public function setRole(int $id, int $roleId): void
     {
         $stmt = $this->pdo->prepare('UPDATE users SET role_id = :role_id WHERE id = :id');
         $stmt->execute(['role_id' => $roleId, 'id' => $id]);
     }
 
+    /**
+     * Permanently delete a user.
+     */
     public function deleteUser(int $id): void
     {
         $stmt = $this->pdo->prepare('DELETE FROM users WHERE id = :id');
         $stmt->execute(['id' => $id]);
     }
 
+    /**
+     * List available roles.
+     *
+     * @param bool $includePending When false, excludes the `pending` role.
+     * @return array<int,array{id:mixed,name:mixed}>
+     */
     public function listRoles(bool $includePending = false): array
     {
         $sql = 'SELECT id, name FROM roles';
@@ -124,6 +193,9 @@ class UserRepository
         return $stmt->fetchAll();
     }
 
+    /**
+     * Ensure a role exists and returns its id.
+     */
     private function ensureRole(string $roleName): int
     {
         $select = $this->pdo->prepare('SELECT id FROM roles WHERE name = :name LIMIT 1');

@@ -7,10 +7,30 @@ use App\Database;
 use PDO;
 use PDOException;
 
+/**
+ * Manual / knowledge base repository.
+ *
+ * Encapsulates DB access for knowledge base articles and their attachments.
+ *
+ * Tables used (expected):
+ * - knowledge_articles
+ * - attachments
+ * - users (joined for created/updated by display)
+ *
+ * Notes:
+ * - Listing and single article queries join `users` to enrich created/updated
+ *   user display values.
+ * - {@see createArticle()} supports schema variations by falling back across
+ *   different creator column names (e.g. `created_by_user_id` vs `created_by`).
+ */
 class ManualRepository
 {
+    /** PDO connection used for queries. */
     private PDO $pdo;
 
+    /**
+     * @param PDO|null $pdo Optional PDO injection for tests/DI.
+     */
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?? Database::getConnection();
@@ -18,6 +38,8 @@ class ManualRepository
 
     /**
      * List articles with optional search and filters.
+     *
+     * @return array<int,array<string,mixed>>
      */
     public function findAllArticles(?string $q = null, ?string $category = null, ?string $difficulty = null): array
     {
@@ -58,7 +80,7 @@ class ManualRepository
     }
 
     /**
-     * Find single article by id.
+     * Find a single article.
      */
     public function findArticleById(int $id): ?array
     {
@@ -78,7 +100,10 @@ class ManualRepository
     }
 
     /**
-     * Create new article and return its id.
+     * Create a new article.
+     *
+     * @param array<string,mixed> $data Normalized article fields.
+     * @return int Inserted article id.
      */
     public function createArticle(array $data): int
     {
@@ -137,7 +162,9 @@ class ManualRepository
     }
 
     /**
-     * Update article by id.
+     * Update an article.
+     *
+     * @param array<string,mixed> $data Normalized article fields.
      */
     public function updateArticle(int $id, array $data): void
     {
@@ -156,7 +183,7 @@ class ManualRepository
     }
 
     /**
-     * Delete article by id.
+     * Delete an article.
      */
     public function deleteArticle(int $id): void
     {
@@ -166,6 +193,8 @@ class ManualRepository
 
     /**
      * List attachments for the given article.
+     *
+     * @return array<int,array<string,mixed>>
      */
     public function listAttachments(int $articleId): array
     {
@@ -179,7 +208,9 @@ class ManualRepository
     }
 
     /**
-     * Insert a new attachment and return its id.
+     * Insert an attachment record.
+     *
+     * @return int Inserted attachment id.
      */
     public function addAttachment(int $articleId, string $filePath, ?string $description = null): int
     {
@@ -196,7 +227,7 @@ class ManualRepository
     }
 
     /**
-     * Find single attachment by id.
+     * Find an attachment by id.
      */
     public function findAttachmentById(int $attId): ?array
     {
@@ -210,7 +241,7 @@ class ManualRepository
     }
 
     /**
-     * Delete attachment by id.
+     * Delete an attachment by id.
      */
     public function deleteAttachment(int $attId): void
     {

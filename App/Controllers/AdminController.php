@@ -7,12 +7,15 @@ use Framework\Http\Request;
 use Framework\Http\Responses\Response;
 
 /**
- * Class AdminController
+ * Admin dashboard controller.
  *
- * This controller manages admin-related actions within the application.It extends the base controller functionality
- * provided by BaseController.
+ * Entry point for administrator-only screens.
  *
- * @package App\Controllers
+ * Authorization:
+ * - All actions require role `admin`.
+ *
+ * Actions:
+ * - index(): Renders the admin dashboard/landing page.
  */
 class AdminController extends BaseController
 {

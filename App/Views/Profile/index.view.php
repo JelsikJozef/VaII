@@ -1,6 +1,19 @@
 <?php
 // AI-GENERATED: Profile overview page (GitHub Copilot / ChatGPT), 2026-01-19
 
+/**
+ * Profile: Overview.
+ *
+ * Displays current user's basic info and links to edit.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,mixed> $profile
+ * - string|null $successMessage
+ * - string|null $errorMessage
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 

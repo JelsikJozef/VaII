@@ -1,5 +1,26 @@
 <?php
 
+/**
+ * Treasury: Edit transaction.
+ *
+ * Form for editing an existing transaction.
+ * - Moderators (treasurer/admin) can edit type/status.
+ * - Owners may edit pending transactions with restricted fields.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,array<int,string>> $errors
+ * - int $transactionId
+ * - string $type
+ * - string $amount
+ * - string $description
+ * - string $status
+ * - float $currentBalance
+ * - bool $canEditType
+ * - bool $canEditStatus
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 
@@ -11,8 +32,11 @@ $view->setLayout('root');
 /** @var string $status */
 /** @var float $currentBalance */
 /** @var int $transactionId */
-/** @var bool $isModerator */
-/** @var bool $isOwnerPending */
+/** @var bool $canEditType */
+/** @var bool $canEditStatus */
+
+$canEditType = !empty($canEditType);
+$canEditStatus = !empty($canEditStatus);
 
 $errors = $errors ?? [];
 $type = $type ?? '';
@@ -45,7 +69,7 @@ $getFieldError = static function (array $errors, string $field): string {
             <form id="treasury-form" method="post" action="<?= $link->url('Treasury.update', ['id' => $transactionId]) ?>" novalidate>
                 <input type="hidden" name="id" value="<?= htmlspecialchars((string)$transactionId, ENT_QUOTES) ?>">
 
-                <?php if ($isModerator): ?>
+                <?php if ($canEditType): ?>
                 <div class="mb-3">
                     <label for="type" class="form-label">Type</label>
                     <select
@@ -111,7 +135,7 @@ $getFieldError = static function (array $errors, string $field): string {
                     </div>
                 </div>
 
-                <?php if ($isModerator): ?>
+                <?php if ($canEditStatus): ?>
                 <div class="mb-3">
                     <label for="status" class="form-label">Status</label>
                     <select

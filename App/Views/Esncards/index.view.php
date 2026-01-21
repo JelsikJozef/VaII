@@ -1,6 +1,23 @@
 <?php
 // AI-GENERATED: ESNcards index redesigned to card layout (GitHub Copilot / ChatGPT), 2026-01-20
 
+/**
+ * ESNcards: Index.
+ *
+ * Lists ESN cards, supports searching and filtering by status.
+ * When `$canManage` is true, shows create/edit/delete controls.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<int,array<string,mixed>> $esncards
+ * - string $search Query string
+ * - string $status Status filter (available|assigned|inactive or empty)
+ * - bool $canManage
+ * - string|null $successMessage
+ * - string|null $errorMessage
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 

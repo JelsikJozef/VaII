@@ -1,6 +1,22 @@
 <?php
 // AI-GENERATED: ESNcards create form view (GitHub Copilot / ChatGPT), 2026-01-18
 
+/**
+ * ESNcards: New.
+ *
+ * Form for creating a new ESN card record.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<string,array<int,string>> $errors
+ * - string $card_number
+ * - string $status
+ * - string $assigned_to_name
+ * - string $assigned_to_email
+ * - string $assigned_at
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 

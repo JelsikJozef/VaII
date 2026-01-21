@@ -1,6 +1,24 @@
 <?php
 // AI-GENERATED: Manual index redesigned to card layout (GitHub Copilot / ChatGPT), 2026-01-20
 
+/**
+ * Manual: Article list.
+ *
+ * Displays a searchable/filterable list of knowledge-base articles.
+ * When `$canManage` is true, shows admin controls (create/edit/delete links).
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<int,array<string,mixed>> $articles (each row may include content_html/content_plain)
+ * - string $q Search query
+ * - string $category Category filter
+ * - string $difficulty Difficulty filter
+ * - bool $canManage Whether admin actions are available
+ * - string|null $successMessage
+ * - string|null $errorMessage
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 

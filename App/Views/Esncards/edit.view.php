@@ -1,6 +1,23 @@
 <?php
 // AI-GENERATED: ESNcards edit form view (GitHub Copilot / ChatGPT), 2026-01-18
 
+/**
+ * ESNcards: Edit.
+ *
+ * Form for editing an existing ESN card record.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - int $id
+ * - array<string,array<int,string>> $errors
+ * - string $card_number
+ * - string $status
+ * - string $assigned_to_name
+ * - string $assigned_to_email
+ * - string $assigned_at
+ */
+
 /** @var \Framework\Support\View $view */
 $view->setLayout('root');
 

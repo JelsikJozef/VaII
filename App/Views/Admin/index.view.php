@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Admin: Dashboard.
+ *
+ * Minimal admin landing page.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ */
+
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var \Framework\Auth\AppUser $user */
 ?>

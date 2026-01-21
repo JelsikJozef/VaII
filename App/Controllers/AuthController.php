@@ -7,17 +7,32 @@ use App\Configuration;
 use Framework\Core\BaseController;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use App\Services\AuthService;
 
 /**
- * Class AuthController
+ * Authentication controller (login / logout / registration).
  *
- * This controller handles authentication actions such as login, logout, and redirection to the login page. It manages
- * user sessions and interactions with the authentication system.
+ * Responsibilities:
+ * - Render login and registration forms.
+ * - Validate submitted credentials.
+ * - Delegate authentication to the configured authenticator
+ *   (see `App/Auth/DbAuthenticator.php`).
+ * - Create new user accounts in `pending` state.
  *
- * @package App\Controllers
+ * Authorization:
+ * - Public: index(), loginForm(), login(), registerForm(), register()
+ * - Requires login: logout()
+ *
+ * Side-effects:
+ * - On successful login, the authenticator stores an {@see \Framework\Core\IIdentity}
+ *   in the session.
+ * - On registration, a user is created with role `pending` and a success message
+ *   is stored in session key `auth.success`.
  */
 class AuthController extends BaseController
 {
+    private ?AuthService $service = null;
+
     /**
      * Authorizes the requested action.
      *
@@ -61,17 +76,11 @@ class AuthController extends BaseController
      */
     public function loginForm(Request $request): Response
     {
-        $session = $this->app->getSession();
-        $success = $session->get('auth.success');
-        $session->remove('auth.success');
-
-        return $this->html([
-            'activeModule' => 'auth',
-            'errors' => [],
-            'email' => '',
-            'genericError' => null,
-            'successMessage' => $success,
-        ], 'login');
+        $result = $this->svc()->loginForm($this->userContext());
+        $data = $result['payload'] ?? [];
+        $data['successMessage'] = $this->consumeFlash('auth.success');
+        $data['errorMessage'] = $this->consumeFlash('auth.error');
+        return $this->html($data, 'login');
     }
 
     /**
@@ -86,41 +95,35 @@ class AuthController extends BaseController
      */
     public function login(Request $request): Response
     {
-        $email = trim((string)($request->post('email') ?? ''));
+        $email = (string)($request->post('email') ?? '');
         $password = (string)($request->post('password') ?? '');
 
-        $errors = [];
-        if ($email === '') {
-            $errors['email'][] = 'Email is required.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors['email'][] = 'Email is not valid.';
+        $result = $this->svc()->login($this->userContext(), [
+            'email' => $email,
+            'password' => $password,
+        ]);
+
+        if (!empty($result['flash'])) {
+            $this->writeFlashFromDomainResult($result['flash']);
         }
 
-        if ($password === '') {
-            $errors['password'][] = 'Password is required.';
+        if (!($result['ok'] ?? false)) {
+            $data = $result['payload'] ?? [];
+            $data['errors'] = $result['errors'] ?? [];
+            $data['successMessage'] = $this->consumeFlash('auth.success');
+            $data['errorMessage'] = $this->consumeFlash('auth.error');
+            return $this->html($data, 'login');
         }
 
-        if (!empty($errors)) {
-            return $this->html([
-                'activeModule' => 'auth',
-                'errors' => $errors,
-                'email' => $email,
-                'genericError' => null,
-                'successMessage' => null,
-            ], 'login');
-        }
-
+        // Service validated credentials; now perform session login via authenticator.
         $auth = $this->app->getAuthenticator();
-        $success = $auth?->login($email, $password) ?? false;
-
-        if (!$success) {
-            return $this->html([
-                'activeModule' => 'auth',
-                'errors' => [],
-                'email' => $email,
-                'genericError' => 'Invalid credentials or awaiting approval.',
-                'successMessage' => null,
-            ], 'login');
+        $loginOk = $auth?->login($email, $password) ?? false;
+        if (!$loginOk) {
+            $this->flash('auth.error', 'Unable to log in. Please try again.');
+            $data = $result['payload'] ?? [];
+            $data['errors'] = [];
+            $data['genericError'] = 'Unable to log in. Please try again.';
+            return $this->html($data, 'login');
         }
 
         return $this->redirect($this->url('Home.index'));
@@ -136,6 +139,10 @@ class AuthController extends BaseController
      */
     public function logout(Request $request): Response
     {
+        $result = $this->svc()->logout($this->userContext());
+        if (!empty($result['flash'])) {
+            $this->writeFlashFromDomainResult($result['flash']);
+        }
         $this->app->getAuthenticator()?->logout();
         return $this->redirect($this->url('Auth.loginForm'));
     }
@@ -149,12 +156,11 @@ class AuthController extends BaseController
      */
     public function registerForm(Request $request): Response
     {
-        return $this->html([
-            'activeModule' => 'auth',
-            'errors' => [],
-            'name' => '',
-            'email' => '',
-        ], 'register');
+        $result = $this->svc()->registerForm($this->userContext());
+        $data = $result['payload'] ?? [];
+        $data['successMessage'] = $this->consumeFlash('auth.success');
+        $data['errorMessage'] = $this->consumeFlash('auth.error');
+        return $this->html($data, 'register');
     }
 
     /**
@@ -169,58 +175,72 @@ class AuthController extends BaseController
      */
     public function register(Request $request): Response
     {
-        $name = trim((string)($request->post('name') ?? ''));
-        $email = trim((string)($request->post('email') ?? ''));
-        $password = (string)($request->post('password') ?? '');
-        $passwordConfirm = (string)($request->post('password_confirm') ?? '');
+        $result = $this->svc()->register($this->userContext(), [
+            'name' => $request->post('name'),
+            'email' => $request->post('email'),
+            'password' => $request->post('password'),
+            'password_confirm' => $request->post('password_confirm'),
+        ]);
 
-        $errors = [];
-        if ($name === '') {
-            $errors['name'][] = 'Name is required.';
-        } elseif (mb_strlen($name) < 2) {
-            $errors['name'][] = 'Name must be at least 2 characters.';
-        } elseif (mb_strlen($name) > 255) {
-            $errors['name'][] = 'Name must be at most 255 characters.';
+        if (!empty($result['flash'])) {
+            $this->writeFlashFromDomainResult($result['flash']);
         }
 
-        if ($email === '') {
-            $errors['email'][] = 'Email is required.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors['email'][] = 'Email is not valid.';
-        } elseif (mb_strlen($email) > 255) {
-            $errors['email'][] = 'Email must be at most 255 characters.';
-        } elseif ((new \App\Repositories\UserRepository())->emailExists($email)) {
-            $errors['email'][] = 'Email is already in use.';
+        if (!($result['ok'] ?? false)) {
+            $data = $result['payload'] ?? [];
+            $data['errors'] = $result['errors'] ?? [];
+            return $this->html($data, 'register');
         }
-
-        if ($password === '') {
-            $errors['password'][] = 'Password is required.';
-        } elseif (strlen($password) < 8) {
-            $errors['password'][] = 'Password must be at least 8 characters.';
-        }
-
-        if ($passwordConfirm === '') {
-            $errors['password_confirm'][] = 'Please confirm the password.';
-        } elseif ($password !== $passwordConfirm) {
-            $errors['password_confirm'][] = 'Passwords do not match.';
-        }
-
-        if (!empty($errors)) {
-            return $this->html([
-                'activeModule' => 'auth',
-                'errors' => $errors,
-                'name' => $name,
-                'email' => $email,
-                'successMessage' => null,
-            ], 'register');
-        }
-
-        $repo = new \App\Repositories\UserRepository();
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-        $repo->createPendingUser($name, $email, $hash);
-
-        $this->app->getSession()->set('auth.success', 'Registration submitted. Wait for admin approval.');
 
         return $this->redirect($this->url('Auth.loginForm'));
+    }
+
+    private function svc(): AuthService
+    {
+        if ($this->service === null) {
+            $this->service = new AuthService();
+        }
+        return $this->service;
+    }
+
+    private function userContext(): array
+    {
+        $id = $this->user?->getIdentity()?->getId();
+        $role = $this->user?->getIdentity()?->getRole();
+        if ($role === null && $this->user?->getRole() !== null) {
+            $role = $this->user->getRole();
+        }
+        return [
+            'userId' => $id !== null ? (int)$id : null,
+            'role' => $role !== null ? (string)$role : null,
+            'isLoggedIn' => $id !== null,
+        ];
+    }
+
+    private function flash(string $key, mixed $value): void
+    {
+        $this->session()->set($key, $value);
+    }
+
+    private function consumeFlash(string $key): mixed
+    {
+        $value = $this->session()->get($key);
+        $this->session()->remove($key);
+        return $value;
+    }
+
+    /** @param array{type?:string,message?:string} $flash */
+    private function writeFlashFromDomainResult(array $flash): void
+    {
+        $type = (string)($flash['type'] ?? '');
+        $message = (string)($flash['message'] ?? '');
+        if ($message === '') {
+            return;
+        }
+        if ($type === 'success') {
+            $this->flash('auth.success', $message);
+            return;
+        }
+        $this->flash('auth.error', $message);
     }
 }

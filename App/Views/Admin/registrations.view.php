@@ -1,5 +1,18 @@
 <?php
-// AI-GENERATED: Admin pending registrations view (GitHub Copilot / ChatGPT), 2026-01-19
+
+/**
+ * Admin: Registrations.
+ *
+ * Lists users and allows admins to approve/reject or set roles.
+ *
+ * Expected variables (depending on controller/view variant):
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ * - array<int,array<string,mixed>> $pending
+ * - array<int,array<string,mixed>> $roles
+ * - string|null $successMessage
+ * - string|null $errorMessage
+ */
 
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var \Framework\Support\View $view */

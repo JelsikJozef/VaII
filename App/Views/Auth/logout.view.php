@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Auth: Logout confirmation.
+ *
+ * Simple informational page shown after a successful logout.
+ *
+ * Expected variables:
+ * - \Framework\Support\View $view
+ * - \Framework\Support\LinkGenerator $link
+ */
+
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var \Framework\Support\View $view */
 

@@ -13,13 +13,15 @@ use App\Repositories\NewsRepository;
 use App\Repositories\UserRepository;
 
 /**
- * Class HomeController
- * Handles actions related to the home page and other public actions.
+ * Home controller (landing page + simple public pages).
  *
- * This controller includes actions that are accessible to all users, including a default landing page and a contact
- * page. It provides a mechanism for authorizing actions based on user permissions.
+ * Actions:
+ * - index(): Home dashboard. Shows an "activity" feed. If there are no activity
+ *   rows yet, it falls back to the latest entries from `storage/news.jsonl`.
+ * - contact(): Static contact page.
  *
- * @package App\Controllers
+ * Authorization:
+ * - Currently allows all actions (public).
  */
 class HomeController extends BaseController
 {
