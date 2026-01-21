@@ -76,7 +76,16 @@ $createdAt = $formatDateTime($poll['created_at'] ?? null);
             </div>
             <div class="small text-muted">Created by <?= htmlspecialchars($creator, ENT_QUOTES) ?> • <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
         </div>
-        <a href="<?= $link->url('Polls.index') ?>" class="btn btn-outline-secondary">Back</a>
+        <div class="d-flex gap-2">
+            <a href="<?= $link->url('Polls.index') ?>" class="btn btn-outline-secondary">Back</a>
+            <?php if ($canManage && !empty($poll['isOpen'])): ?>
+                <form method="post" action="<?= $link->url('Polls.delete', ['id' => $poll['id'] ?? 0]) ?>" onsubmit="return confirm('Close this poll?');">
+                    <input type="hidden" name="id" value="<?= htmlspecialchars((string)($poll['id'] ?? 0), ENT_QUOTES) ?>">
+                    <input type="hidden" name="mode" value="close">
+                    <button type="submit" class="btn btn-warning">Close poll</button>
+                </form>
+            <?php endif; ?>
+        </div>
     </div>
 
     <?php if ($canVote): ?>

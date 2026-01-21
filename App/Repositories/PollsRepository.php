@@ -213,4 +213,16 @@ class PollsRepository
             throw $e;
         }
     }
+
+    /**
+     * Update poll active status.
+     */
+    public function setPollStatus(int $pollId, bool $isActive): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE polls SET is_active = :is_active WHERE id = :id');
+        $stmt->execute([
+            'is_active' => $isActive ? 1 : 0,
+            'id' => $pollId,
+        ]);
+    }
 }

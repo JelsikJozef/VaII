@@ -137,7 +137,8 @@ class PollsController extends BaseController
     public function delete(Request $request): Response
     {
         $pollId = (int)($request->get('id') ?? $request->post('id') ?? 0);
-        $result = $this->svc()->delete($this->userContext(), $pollId);
+        $mode = (string)($request->post('mode') ?? $request->get('mode') ?? 'delete');
+        $result = $this->svc()->delete($this->userContext(), $pollId, ['mode' => $mode]);
 
         if (!empty($result['flash'])) {
             $this->writeFlashFromDomainResult($result['flash']);

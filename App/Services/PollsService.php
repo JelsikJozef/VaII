@@ -30,7 +30,7 @@ class PollsService
 
         $pollsWithPresentation = array_map(function (array $poll): array {
             $isActive = ((int)($poll['is_active'] ?? 0)) === 1;
-            return $poll + $this->statusPresentation($isActive);
+            return $poll + $this->statusPresentation($isActive) + ['isOpen' => $isActive];
         }, $polls);
 
         return [
@@ -74,7 +74,7 @@ class PollsService
         $isOpen = ((int)($poll['is_active'] ?? 0)) === 1;
 
         $role = isset($user['role']) ? (string)$user['role'] : null;
-        $poll += $this->statusPresentation($isOpen);
+        $poll += $this->statusPresentation($isOpen) + ['isOpen' => $isOpen];
 
         return [
             'ok' => true,
@@ -89,6 +89,7 @@ class PollsService
                 'hasVoted' => $hasVoted,
                 'canVote' => $isOpen && !$hasVoted,
                 'canManage' => $this->canManagePolls($role),
+                'isOpen' => $isOpen,
             ],
         ];
     }
@@ -252,6 +253,7 @@ class PollsService
                     'hasVoted' => $hasVoted,
                     'canVote' => $isOpen && !$hasVoted,
                     'canManage' => $this->canManagePolls($role),
+                    'isOpen' => $isOpen,
                 ],
                 'errors' => $errors,
             ];
@@ -281,7 +283,7 @@ class PollsService
      * @param array{userId?:int|null, role?:string|null, isLoggedIn?:bool} $user
      * @return array{ok:bool,payload:array,flash?:array}
      */
-    public function delete(array $user, int $pollId): array
+    public function delete(array $user, int $pollId, array $options = []): array
     {
         $role = isset($user['role']) ? (string)$user['role'] : null;
         if (!$this->canManagePolls($role)) {
@@ -306,6 +308,26 @@ class PollsService
                 'ok' => false,
                 'payload' => [],
                 'flash' => ['type' => 'error', 'message' => 'Poll not found.'],
+            ];
+        }
+
+        $mode = (string)($options['mode'] ?? 'delete');
+
+        if ($mode === 'close') {
+            try {
+                $this->polls->setPollStatus($pollId, false);
+            } catch (PDOException) {
+                return [
+                    'ok' => false,
+                    'payload' => [],
+                    'flash' => ['type' => 'error', 'message' => 'Unable to close poll.'],
+                ];
+            }
+
+            return [
+                'ok' => true,
+                'payload' => ['id' => $pollId],
+                'flash' => ['type' => 'success', 'message' => 'Poll closed.'],
             ];
         }
 
@@ -338,6 +360,7 @@ class PollsService
             'statusClass' => $isActive
                 ? 'bg-success-subtle text-success border-success-subtle'
                 : 'bg-danger-subtle text-danger border-danger-subtle',
+            'isOpen' => $isActive,
         ];
     }
 
