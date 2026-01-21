@@ -19,14 +19,8 @@ class TreasuryController extends BaseController
 
     public function authorize(Request $request, string $action): bool
     {
-        $action = strtolower($action);
-
         // Coarse controller-level guard only; service enforces record-level permissions.
-        // Allow unauthenticated only if BaseController allows it (fallback true).
-        if ($action === 'setstatusjson') {
-            return true;
-        }
-
+        // Enforce login for ALL actions.
         return $this->requireLogin() ?: true;
     }
 
@@ -140,11 +134,11 @@ class TreasuryController extends BaseController
 
     public function setStatusJson(Request $request): JsonResponse
     {
-        if (!$this->requireLogin()) {
-            return $this->json(['ok' => false, 'message' => 'Forbidden'])->setStatusCode(403);
+        $id = $this->extractTransactionId($request);
+        if ($id <= 0) {
+            return $this->json(['ok' => false, 'message' => 'Invalid transaction id.'])->setStatusCode(400);
         }
 
-        $id = $this->extractTransactionId($request);
         $status = (string)($request->post('status') ?? '');
 
         $result = $this->svc()->setStatus($this->userContext(), $id, $status);
@@ -232,16 +226,7 @@ class TreasuryController extends BaseController
 
     private function extractTransactionId(Request $request): int
     {
-        $id = (int)($request->get('id') ?? $request->post('id') ?? 0);
-        if ($id > 0) {
-            return $id;
-        }
-
-        $uri = (string)($request->server('REQUEST_URI') ?? '');
-        if (preg_match('#/treasury/status/(\d+)#', $uri, $matches)) {
-            return (int)$matches[1];
-        }
-
-        return 0;
+        // Prefer route/query/body param; avoid coupling to raw REQUEST_URI.
+        return (int)($request->get('id') ?? $request->post('id') ?? 0);
     }
 }
