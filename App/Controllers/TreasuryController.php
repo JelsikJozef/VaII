@@ -21,7 +21,7 @@ class TreasuryController extends BaseController
     {
         // Coarse controller-level guard only; service enforces record-level permissions.
         // Enforce login for ALL actions.
-        return $this->requireLogin() ?: true;
+        return $this->requireLogin();
     }
 
     public function index(Request $request): Response
@@ -226,7 +226,19 @@ class TreasuryController extends BaseController
 
     private function extractTransactionId(Request $request): int
     {
-        // Prefer route/query/body param; avoid coupling to raw REQUEST_URI.
-        return (int)($request->get('id') ?? $request->post('id') ?? 0);
+        // 1) Prefer regular framework inputs (query/body)
+        $id = (int)($request->value('id') ?? 0);
+        if ($id > 0) {
+            return $id;
+        }
+
+        // 2) Fallback: pretty route param in /treasury/status/{id}
+        // Request doesn't currently expose route params, so parse URI as a last resort.
+        $uri = (string)($request->server('REQUEST_URI') ?? '');
+        if (preg_match('#/treasury/status/(\d+)#', $uri, $m)) {
+            return (int)$m[1];
+        }
+
+        return 0;
     }
 }

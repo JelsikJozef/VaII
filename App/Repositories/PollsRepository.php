@@ -190,4 +190,27 @@ class PollsRepository
             throw new PDOException('Option does not belong to the selected poll.');
         }
     }
+
+    /**
+     * Atomic create of poll and options.
+     *
+     * @param array{question:string,is_active:bool,created_by?:int|null} $pollData
+     * @param array<int,string> $options
+     * @return int New poll id
+     */
+    public function createPollWithOptions(array $pollData, array $options): int
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $pollId = $this->createPoll($pollData['question'], $pollData['is_active'], $pollData['created_by'] ?? null);
+            foreach ($options as $optionText) {
+                $this->addOption($pollId, $optionText);
+            }
+            $this->pdo->commit();
+            return $pollId;
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
 }

@@ -26,6 +26,9 @@ $view->setLayout('root');
 $polls = $polls ?? [];
 $canManage = !empty($canManage);
 
+$statusLabel = static fn(array $p) => (string)($p['statusLabel'] ?? '');
+$statusClass = static fn(array $p) => (string)($p['statusClass'] ?? 'bg-light text-body border-secondary-subtle');
+
 $formatUser = static function (array $row): string {
     $name = trim((string)($row['created_by_name'] ?? ''));
     $email = trim((string)($row['created_by_email'] ?? ''));
@@ -38,10 +41,6 @@ $formatUser = static function (array $row): string {
     return 'Unknown user';
 };
 
-$statusClasses = [
-    1 => 'bg-success-subtle text-success border-success-subtle',
-    0 => 'bg-danger-subtle text-danger border-danger-subtle',
-];
 ?>
 
 <div class="container mt-4">
@@ -58,10 +57,10 @@ $statusClasses = [
         <div class="list-group">
             <?php foreach ($polls as $poll):
                  $pollId = (int)($poll['id'] ?? 0);
-                 $isActive = (int)($poll['is_active'] ?? 0) === 1;
-                 $badgeClass = $statusClasses[$isActive ? 1 : 0] ?? 'bg-light text-body border-secondary-subtle';
+                 $badgeClass = $statusClass($poll);
                  $question = (string)($poll['question'] ?? '');
-                // AI-GENERATED: Unified poll timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
+                 $badgeLabel = $statusLabel($poll) ?: 'Status';
+                  // AI-GENERATED: Unified poll timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
                  $createdAt = $formatDateTime($poll['created_at'] ?? null);
                  $creator = $formatUser($poll);
             ?>
@@ -75,8 +74,8 @@ $statusClasses = [
                     <div class="small text-muted">Created by <?= htmlspecialchars($creator, ENT_QUOTES) ?> • <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
                 </div>
                 <div class="text-end ms-3">
-                    <span class="badge rounded-pill border <?= $badgeClass ?>">
-                        <?= $isActive ? 'Open' : 'Closed' ?>
+                    <span class="badge rounded-pill border <?= htmlspecialchars($badgeClass, ENT_QUOTES) ?>">
+                        <?= htmlspecialchars($badgeLabel, ENT_QUOTES) ?>
                     </span>
                     <?php if ($canManage): ?>
                         <form method="post" action="<?= $link->url('Polls.delete', ['id' => $pollId]) ?>" class="mt-2" onsubmit="return confirm('Delete this poll?');">

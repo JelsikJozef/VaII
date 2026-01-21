@@ -16,6 +16,7 @@
  * - array<string,array<int,string>> $errors
  * - int $selectedOptionId
  * - bool $hasVoted
+ * - bool $canVote
  * - bool $canManage
  */
 
@@ -29,6 +30,7 @@ $view->setLayout('root');
 /** @var array $errors */
 /** @var int $selectedOptionId */
 /** @var bool $hasVoted */
+/** @var bool $canVote */
 /** @var bool $canManage */
 
 $poll = $poll ?? [];
@@ -37,7 +39,12 @@ $results = $results ?? [];
 $errors = $errors ?? [];
 $selectedOptionId = (int)($selectedOptionId ?? 0);
 $hasVoted = !empty($hasVoted);
+$canVote = !empty($canVote);
 $canManage = !empty($canManage);
+
+$getFieldError = static function (array $errs, string $field): string {
+    return isset($errs[$field][0]) ? (string)$errs[$field][0] : '';
+};
 
 $formatUser = static function (array $poll): string {
     $name = trim((string)($poll['created_by_name'] ?? ''));
@@ -51,7 +58,8 @@ $formatUser = static function (array $poll): string {
     return 'Unknown user';
 };
 
-$status = (int)($poll['is_active'] ?? 0);
+$statusLabel = (string)($poll['statusLabel'] ?? '');
+$statusClass = (string)($poll['statusClass'] ?? 'bg-light text-body border-secondary-subtle');
 $creator = $formatUser($poll);
 // AI-GENERATED: Unified poll detail timestamp formatting (GitHub Copilot / ChatGPT), 2026-01-20
 $createdAt = $formatDateTime($poll['created_at'] ?? null);
@@ -62,8 +70,8 @@ $createdAt = $formatDateTime($poll['created_at'] ?? null);
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
                 <h1 class="h4 mb-0"><?= htmlspecialchars((string)($poll['question'] ?? 'Poll'), ENT_QUOTES) ?></h1>
-                <span class="badge rounded-pill border <?= $statusClasses[$status === 1 ? 1 : 0] ?? 'bg-light text-body border-secondary-subtle' ?>">
-                    <?= $status === 1 ? 'Open' : 'Closed' ?>
+                <span class="badge rounded-pill border <?= htmlspecialchars($statusClass, ENT_QUOTES) ?>">
+                    <?= htmlspecialchars($statusLabel ?: 'Status', ENT_QUOTES) ?>
                 </span>
             </div>
             <div class="small text-muted">Created by <?= htmlspecialchars($creator, ENT_QUOTES) ?> • <?= htmlspecialchars($createdAt, ENT_QUOTES) ?></div>
@@ -71,7 +79,7 @@ $createdAt = $formatDateTime($poll['created_at'] ?? null);
         <a href="<?= $link->url('Polls.index') ?>" class="btn btn-outline-secondary">Back</a>
     </div>
 
-    <?php if ($status === 1 && !$hasVoted): ?>
+    <?php if ($canVote): ?>
         <form method="post" action="<?= $link->url('Polls.vote', ['id' => $poll['id'] ?? 0]) ?>" class="card mb-4" novalidate>
             <input type="hidden" name="id" value="<?= htmlspecialchars((string)($poll['id'] ?? 0), ENT_QUOTES) ?>">
             <div class="card-header">Vote</div>
@@ -107,9 +115,7 @@ $createdAt = $formatDateTime($poll['created_at'] ?? null);
         </form>
     <?php else: ?>
         <div class="alert alert-info">
-            <?= $status !== 1
-                ? 'Poll is closed for voting.'
-                : 'You already voted in this poll.' ?>
+            <?= $hasVoted ? 'You already voted in this poll.' : 'Poll is closed for voting.' ?>
         </div>
     <?php endif; ?>
 
