@@ -6,6 +6,7 @@ namespace App\Controllers;
 require_once __DIR__ . '/../../Framework/ClassLoader.php';
 
 use App\Repositories\ManualRepository;
+use App\Services\ManualService;
 use App\Services\MarkdownRenderer;
 use Framework\Core\BaseController;
 use Framework\Http\Request;
@@ -34,115 +35,75 @@ use Framework\Http\Session;
 class ManualController extends BaseController
 {
     private ?ManualRepository $repository = null;
+    private ?ManualService $service = null;
     private ?Session $flashSession = null;
-    private ?MarkdownRenderer $markdown = null;
 
     public function authorize(Request $request, string $action): bool
     {
-        $action = strtolower($action);
-        if (in_array($action, ['index', 'show'], true)) {
-            return $this->requireLogin();
-        }
-
-        return $this->requireRole(['admin']);
+        return $this->requireLogin();
     }
 
     public function index(Request $request): Response
     {
-        $q = trim((string)($request->get('q') ?? ''));
-        $category = trim((string)($request->get('category') ?? ''));
-        $difficultyRaw = trim((string)($request->get('difficulty') ?? ''));
-        $allowedDifficulties = ['easy', 'medium', 'hard'];
-        $difficulty = in_array($difficultyRaw, $allowedDifficulties, true) ? $difficultyRaw : '';
-
-        $articles = $this->repo()->findAllArticles(
-            $q !== '' ? $q : null,
-            $category !== '' ? $category : null,
-            $difficulty !== '' ? $difficulty : null
-        );
-
-        $renderer = $this->markdownRenderer();
-        foreach ($articles as &$article) {
-            $raw = (string)($article['content'] ?? '');
-            $safeHtml = $renderer->toSafeHtml($raw);
-            $article['content_html'] = $safeHtml;
-            $article['content_plain'] = trim(strip_tags($safeHtml));
-        }
-        unset($article);
-
-        return $this->html([
-            'activeModule' => 'manual',
-            'articles' => $articles,
-            'q' => $q,
-            'category' => $category,
-            'difficulty' => $difficulty,
-            'canManage' => $this->requireRole(['admin']),
-            'successMessage' => $this->consumeFlash('manual.success'),
-            'errorMessage' => $this->consumeFlash('manual.error'),
+        $result = $this->svc()->index($this->userContext(), [
+            'q' => $request->get('q'),
+            'category' => $request->get('category'),
+            'difficulty' => $request->get('difficulty'),
         ]);
+
+        $data = $result['payload'] ?? [];
+        $data['q'] = (string)($request->get('q') ?? '');
+        $data['category'] = (string)($request->get('category') ?? '');
+        $data['difficulty'] = (string)($request->get('difficulty') ?? '');
+        $data['successMessage'] = $this->consumeFlash('manual.success');
+        $data['errorMessage'] = $this->consumeFlash('manual.error');
+
+        return $this->html($data);
     }
 
     public function show(Request $request): Response
     {
         $id = (int)($request->get('id') ?? 0);
-        if ($id <= 0) {
-            $this->flash('manual.error', 'Article not found.');
+        $result = $this->svc()->show($this->userContext(), $id);
+
+        if (!empty($result['flash'])) {
+            $this->writeFlashFromDomainResult($result['flash']);
+        }
+
+        if (!($result['ok'] ?? false)) {
             return $this->redirect($this->url('Manual.index'));
         }
 
-        $article = $this->repo()->findArticleById($id);
-        if ($article === null) {
-            $this->flash('manual.error', 'Article not found.');
-            return $this->redirect($this->url('Manual.index'));
-        }
+        $data = $result['payload'] ?? [];
+        $data['successMessage'] = $this->consumeFlash('manual.success');
+        $data['errorMessage'] = $this->consumeFlash('manual.error');
 
-        $renderer = $this->markdownRenderer();
-        $article['content_html'] = $renderer->toSafeHtml((string)($article['content'] ?? ''));
-
-        $attachments = $this->repo()->listAttachments($id);
-
-        return $this->html([
-            'activeModule' => 'manual',
-            'article' => $article,
-            'attachments' => $attachments,
-            'canManage' => $this->requireRole(['admin']),
-            'successMessage' => $this->consumeFlash('manual.success'),
-            'errorMessage' => $this->consumeFlash('manual.error'),
-        ], 'show');
+        return $this->html($data, 'show');
     }
 
     public function new(Request $request): Response
     {
-        return $this->html([
-            'activeModule' => 'manual',
-            'errors' => [],
-            'title' => '',
-            'category' => '',
-            'difficulty' => '',
-            'content' => '',
-        ], 'new');
+        $result = $this->svc()->newForm($this->userContext());
+        return $this->html($result['payload'] ?? [], 'new');
     }
 
     public function store(Request $request): Response
     {
-        $input = $this->collectInput($request);
-        [$errors, $normalized] = $this->validateInput($input);
+        $result = $this->svc()->store(
+            $this->userContext(),
+            $this->collectInput($request),
+            $request->file('file')
+        );
 
-        if (!empty($errors)) {
-            return $this->html([
-                'activeModule' => 'manual',
-                'errors' => $errors,
-                'title' => $input['title'],
-                'category' => $input['category'],
-                'difficulty' => $input['difficulty'],
-                'content' => $input['content'],
-            ], 'new');
+        if (!empty($result['flash'])) {
+            $this->writeFlashFromDomainResult($result['flash']);
         }
 
-        $normalized['created_by_user_id'] = $this->user?->getIdentity()?->getId();
-        $this->repo()->createArticle($normalized);
-
-        $this->flash('manual.success', 'Article created successfully.');
+        if (!($result['ok'] ?? false)) {
+            $data = $result['payload'] ?? [];
+            $data['errors'] = $result['errors'] ?? [];
+            return $this->html($data, 'new');
+        }
 
         return $this->redirect($this->url('Manual.index'));
     }
@@ -150,59 +111,35 @@ class ManualController extends BaseController
     public function edit(Request $request): Response
     {
         $id = (int)($request->get('id') ?? 0);
-        if ($id <= 0) {
-            $this->flash('manual.error', 'Article not found.');
+        $result = $this->svc()->editForm($this->userContext(), $id);
+        if (!empty($result['flash'])) {
+            $this->writeFlashFromDomainResult($result['flash']);
+        }
+        if (!($result['ok'] ?? false)) {
             return $this->redirect($this->url('Manual.index'));
         }
-
-        $article = $this->repo()->findArticleById($id);
-        if ($article === null) {
-            $this->flash('manual.error', 'Article not found.');
-            return $this->redirect($this->url('Manual.index'));
-        }
-
-        return $this->html([
-            'activeModule' => 'manual',
-            'errors' => [],
-            'id' => $id,
-            'title' => (string)($article['title'] ?? ''),
-            'category' => (string)($article['category'] ?? ''),
-            'difficulty' => (string)($article['difficulty'] ?? ''),
-            'content' => (string)($article['content'] ?? ''),
-        ], 'edit');
+        return $this->html($result['payload'] ?? [], 'edit');
     }
 
     public function update(Request $request): Response
     {
         $id = (int)($request->get('id') ?? $request->post('id') ?? 0);
-        if ($id <= 0) {
-            $this->flash('manual.error', 'Article not found.');
-            return $this->redirect($this->url('Manual.index'));
+        $result = $this->svc()->update(
+            $this->userContext(),
+            $id,
+            $this->collectInput($request),
+            $request->file('file')
+        );
+
+        if (!empty($result['flash'])) {
+            $this->writeFlashFromDomainResult($result['flash']);
         }
 
-        $existing = $this->repo()->findArticleById($id);
-        if ($existing === null) {
-            $this->flash('manual.error', 'Article not found.');
-            return $this->redirect($this->url('Manual.index'));
+        if (!($result['ok'] ?? false)) {
+            $data = $result['payload'] ?? [];
+            $data['errors'] = $result['errors'] ?? [];
+            return $this->html($data, 'edit');
         }
-
-        $input = $this->collectInput($request);
-        [$errors, $normalized] = $this->validateInput($input);
-
-        if (!empty($errors)) {
-            return $this->html([
-                'activeModule' => 'manual',
-                'errors' => $errors,
-                'id' => $id,
-                'title' => $input['title'],
-                'category' => $input['category'],
-                'difficulty' => $input['difficulty'],
-                'content' => $input['content'],
-            ], 'edit');
-        }
-
-        $this->repo()->updateArticle($id, $normalized);
-        $this->flash('manual.success', 'Article updated successfully.');
 
         return $this->redirect($this->url('Manual.show', ['id' => $id]));
     }
@@ -210,20 +147,10 @@ class ManualController extends BaseController
     public function delete(Request $request): Response
     {
         $id = (int)($request->get('id') ?? $request->post('id') ?? 0);
-        if ($id <= 0) {
-            $this->flash('manual.error', 'Article not found.');
-            return $this->redirect($this->url('Manual.index'));
+        $result = $this->svc()->delete($this->userContext(), $id);
+        if (!empty($result['flash'])) {
+            $this->writeFlashFromDomainResult($result['flash']);
         }
-
-        $existing = $this->repo()->findArticleById($id);
-        if ($existing === null) {
-            $this->flash('manual.error', 'Article not found.');
-            return $this->redirect($this->url('Manual.index'));
-        }
-
-        $this->repo()->deleteArticle($id);
-        $this->flash('manual.success', 'Article deleted.');
-
         return $this->redirect($this->url('Manual.index'));
     }
 
@@ -433,95 +360,68 @@ class ManualController extends BaseController
         return [$errors, $normalized];
     }
 
+    private function svc(): ManualService
+    {
+        if ($this->service === null) {
+            $this->service = new ManualService();
+        }
+        return $this->service;
+    }
+
+    private function userContext(): array
+    {
+        $id = $this->user?->getIdentity()?->getId();
+        $role = $this->user?->getIdentity()?->getRole();
+        if ($role === null && $this->user?->getRole() !== null) {
+            $role = $this->user->getRole();
+        }
+        return [
+            'userId' => $id !== null ? (int)$id : null,
+            'role' => $role !== null ? (string)$role : null,
+            'isLoggedIn' => $id !== null,
+        ];
+    }
+
     private function repo(): ManualRepository
     {
         if ($this->repository === null) {
             $this->repository = new ManualRepository();
         }
-
         return $this->repository;
     }
 
-    private function markdownRenderer(): MarkdownRenderer
+    private function session(): Session
     {
-        if ($this->markdown === null) {
-            $this->markdown = new MarkdownRenderer();
+        if ($this->flashSession === null) {
+            $this->flashSession = $this->app->getSession();
         }
-
-        return $this->markdown;
-    }
-
-    private function sanitizeOriginalFilename(string $name): string
-    {
-        $trimmed = trim(str_replace("\0", '', $name));
-        $basename = basename($trimmed);
-        $safe = preg_replace('/[^A-Za-z0-9._-]+/', '_', $basename);
-        if ($safe === '') {
-            $safe = 'file';
-        }
-        return mb_substr($safe, 0, 255);
-    }
-
-    private function generateStoredFilename(string $extension): string
-    {
-        $base = bin2hex(random_bytes(16));
-        return $base . '.' . $extension;
-    }
-
-    private function getAttachmentStorageDir(): string
-    {
-        return $this->getPublicDir() . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'manual';
-    }
-
-    private function getPublicDir(): string
-    {
-        $publicDir = realpath(__DIR__ . '/../../public');
-        if ($publicDir === false) {
-            $publicDir = __DIR__ . '/../../public';
-        }
-        return rtrim($publicDir, DIRECTORY_SEPARATOR);
-    }
-
-    private function detectMimeType(string $path): ?string
-    {
-        if (!is_file($path)) {
-            return null;
-        }
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        if ($finfo === false) {
-            return null;
-        }
-        $mime = finfo_file($finfo, $path) ?: null;
-        finfo_close($finfo);
-        return $mime ? strtolower($mime) : null;
-    }
-
-    private function attachmentError(string $message, int $status, array $fieldErrors = []): JsonResponse
-    {
-        return $this->json([
-            'ok' => false,
-            'message' => $message,
-            'fields' => $fieldErrors,
-        ])->setStatusCode($status);
+        return $this->flashSession;
     }
 
     private function flash(string $key, mixed $value): void
     {
-        if ($this->flashSession === null) {
-            $this->flashSession = new Session('flash');
-        }
-        $this->flashSession->set($key, $value);
+        $this->session()->set($key, $value);
     }
 
-    private function consumeFlash(string $key): ?string
+    private function consumeFlash(string $key): mixed
     {
-        if ($this->flashSession === null) {
-            $this->flashSession = new Session('flash');
+        $value = $this->session()->get($key);
+        $this->session()->remove($key);
+        return $value;
+    }
+
+    /** @param array{type?:string,message?:string} $flash */
+    private function writeFlashFromDomainResult(array $flash): void
+    {
+        $type = (string)($flash['type'] ?? '');
+        $message = (string)($flash['message'] ?? '');
+        if ($message === '') {
+            return;
         }
-
-        $value = $this->flashSession->get($key);
-        $this->flashSession->unset($key);
-
-        return $value === null ? null : (string)$value;
+        if ($type === 'success') {
+            $this->flash('manual.success', $message);
+            return;
+        }
+        $this->flash('manual.error', $message);
     }
 }
